@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% load staticfiles %}
+{% load songs_extras %}
+
+{% block headloaders %} 
+<script src="{% static 'songs/archive_set_list.js' %}"></script>   
+<script src="{% static 'songs/simple-pagination/jquery.simplePagination.js' %}"></script>
+<link href="{% static 'songs/simple-pagination/simplePagination.css'%}" rel="stylesheet" type="text/css">
+
+<script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
+<script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
+<script type="text/javascript">  
+    $(document).ready(function(){
+        $(function() {
+            $("#pagination").pagination({
+                pages: {{ archived_setlists.paginator.num_pages }},
+                prevText: "&laquo;",
+                nextText: "&raquo;",
+                hrefTextPrefix: '?page=',
+                currentPage: {{ archived_setlists.number }},
+                selectOnClick: false,
+            });
+            
+            if ({{archived_setlists.number}} == 1){
+                $('.prev').parent().attr('class','disabled');
+            }
+            if ({{archived_setlists.number}} == {{archived_setlists.paginator.num_pages}}){
+                $('.next').parent().attr('class','disabled');
+            }
+            Ladda.bind('.page-link');
+        });
+        Ladda.bind('button[type=submit]');     
+    });
+</script>      
+
+{% endblock %}
+
+{% block content %}
+<h1>Archived Setlists</h1>
+
+{% if archived_setlists %}
+<div class="row">
+    <div class="col-md-7">
+        <ul class="pagination" id="pagination">
+        
+        </ul>
+    </div>
+    <div class="col-md-3 col-md-offset-2">
+        <p class="text-right">
+        Showing Archived Setlists {{archived_setlists.start_index}} - {{archived_setlists.end_index}} of {{archived_setlists.paginator.count}} <br>
+        </p>
+    </div>
+</div>
+
+<ul class="list-group">
+{% for setlist, title_value in archived_and_titles %}
+    <li class="list-group-item" name="{{setlist.pk}}">
+        <div class="row">
+            <div class="col-md-3">
+                {{setlist.date}}
+            </div>
+            <div class="col-md-6">
+                
+                {% if setlist.notes %}
+                    {{setlist.notes}}<br>
+                    {{title_value|truncatechars:200}}
+                {% else %}
+                    {{title_value|truncatechars:200}}
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <button data-toggle="modal" data-target="#setlist-details" class="btn btn-info modal-setlist-details" 
+                    name="{{setlist.pk}}">Details</button>
+                <button class="btn btn-success reuse-setlist" name="{{setlist.pk}}"
+                    data-toggle="modal" data-target="#setlist-details">Reuse</button>
+                <button class="btn btn-danger pull-right delete-setlist" name="{{setlist.pk}}"
+                    data-toggle="modal" data-target="#setlist-details">Delete</button>
+            </div>
+        </div>
+    </li>
+{% endfor %}
+</ul>
+
+
+<div class="modal fade" id="setlist-details" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel"></h4>
+      </div>
+      <div class="modal-body" id="setlist-details-modal-body">
+
+      </div>
+      <div class="modal-footer">
+
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+{% endif %}
+{% endblock %}

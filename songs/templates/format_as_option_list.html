@@ -1,0 +1,288 @@
+
+{% if chapters %}
+{% for chapter in chapters %}
+    <option value="{{ chapter.id }}">Chapter {{ chapter.number }} </option>
+{% endfor %}
+{% endif %}
+
+
+{% if verses %}
+{% for verse in verses %}
+    <option value="{{ verse.id }}">{{verse.book}} {{verse.chapter.number}}:{{ verse.number }} </option>
+{% endfor %}
+{% endif %}
+
+{% if books %}
+{% for book in books %}
+    <option value="{{ book.order_index }}">{{book.name}} </option>
+{% endfor %}
+{% endif %}
+
+{% if alpha %}
+{% for letter in alpha %}
+    <option value="{{letter}}">{{letter}}</option>
+{% endfor %}
+{% endif %}
+
+
+{% if key_options %}
+    {{options|safe}}
+{% endif %}
+
+
+{% if parse_test %}
+    {% if parsable %}
+        True
+    {% else %}
+        False
+    {% endif %}
+{% endif %}
+
+
+{% if tag_search %}
+<!-- THIS IS FOR TAGGING SONGS -->
+    {% if newsongs %}
+        {% if sug %}
+        <br>
+        <div>Did you mean <a href='#' id="suggestion">{{sug}}</a>?</div>
+        {% endif %}
+        <script type="text/javascript">  
+            Shadowbox.init({
+                handleOversize: 'resize',
+            });
+            $(".clickable").click(function(){
+                var ccli = $(this).parent().attr('id');
+                var link = '/worship/song-info-pop/'+ccli;
+                Shadowbox.open({
+                    content:    link,
+                    player:     "iframe",
+                    title:      "Song at a glance...",
+                    //height:     350,
+                    width:      600,
+
+                });
+            });
+        </script> 
+        
+    <p>Search Results for "{{query}}":</p>
+    <table class="table"  id="songlisting">
+        <thead>    
+        <tr><th width=250>Song Title</th><th width=290>Authors</th><th width=60></th></tr>
+        </thead>
+    {% for song in newsongs %}
+        <tr class="song" id="{{song.object.ccli}}">
+        <td class="clickable">{{song.object.title}}</td> 
+        <td class="clickable">{{song.object.authors.all|join:', '}}</td> 
+        <td><input type="button" name="{{song.object.ccli}}" value="Tag" class='form-control tag-button'></td> 
+        </tr>
+        {% endfor %}
+        </table>
+
+    {% else %}
+        <div class="song_results_content">
+        <p>No songs match your search criteria.</p>
+        </div>
+    {% endif %}
+{% endif %}
+
+
+
+
+
+
+{% if by_info %}
+<!-- Not currently used -->
+<!-- if searching by song info -->
+    <script type="text/javascript">  
+        $(document).ready(function(){
+            $("#songlisting tr:not(.song)").hide();
+            $("#songlisting tr:first-child").show();
+            
+            $("#songlisting tr.song").click(function(){
+                $(this).next("tr").toggle();
+                $(this).find(".arrow").toggleClass("up");
+            });
+
+        });
+    </script>  
+    {% if songs %}
+        <br>
+        <p>Found {{songs|length }} song{{ songs|pluralize }} matching "{{query}}".
+
+        </p>
+        
+        
+        <table width=900 cellpadding=5 cellspacing=0 border=0 id="songlisting">
+        <thead>
+        <!-- <tr><th width=300>Song Title</th><th width=330>Authors</th><th width=100>CCLI</th><th>Song_pop</th><th colspan=2 width=150>Tag Song</th></tr> -->
+        <tr><th width=300>Song Title</th><th width=330>Authors</th><th width=100>CCLI</th><th width=100>Song Pop</th><th colspan=2></th></tr>
+        </thead>
+            {% for song in songs %}
+            <tr class="song">
+            <td>{{song.object.title}}</td> 
+            <td>{{song.object.authors.all|join:', '}}</td> 
+            <td>{{song.object.ccli}}</td> 
+            <td>{{song.object.popularity}}</td>
+            <!-- <td><a href="#">Tag</a></td> -->
+            <td><div class="arrow"></div></td>
+            </tr>
+            
+            <tr class="details">
+            <td colspan=5>
+                <div>        
+                    <div class='large-l-content'>
+                        <div class='info-header'>Copyright: </div> <div class='info'> 
+                        <!-- handles the 'no publication year condition' -->
+                        {% if song.object.publication_year != 1111 %}
+                            {{song.object.publication_year}} 
+                        {% endif %}    
+                            {{song.object.publisher.all|join:', '}}</div> <br>
+                        <div class='info-header'>Original Key: </div> <div class='info'> {{song.object.original_key}}</div> <br>
+                        <div class='info-header'>Key Line: </div> <div class='info'> {{song.object.key_line}}</div> <br>
+                        
+                    </div>
+<!--                     <div class='small-r-content'>
+                        Song Popularity: {{song.object.popularity}}
+                            {% for SV in song.object.songverses_set.all %}
+                                {{SV.verse}} - {{SV.SV_popularity}} <br>
+                            {% endfor %}
+                    </div> -->
+                </div>
+            </td> 
+            </td>
+            {% endfor %}
+        </table>
+        
+    {% else %}
+        <br>
+        <p>No songs matched your search of "{{query}}".</p>
+    {% endif %}
+{% endif %}
+
+
+
+{% if by_verse %}
+<!-- Not currently used -->
+<!-- this is for ajax loading of song results by verse -->
+    <script type="text/javascript">  
+        $(document).ready(function(){
+            $("#songlisting tr:not(.song)").hide();
+            $("#songlisting tr:first-child").show();
+            
+            $("#songlisting tr.song").click(function(){
+                $(this).next("tr").toggle();
+                $(this).find(".arrow").toggleClass("up");
+            });
+
+        });
+    </script>  
+    {% if songs %}
+        <p>Found {{songs|length }} song{{ songs|pluralize }} matching "{{query}}".
+
+        </p>
+        
+        
+        <table width=900 cellpadding=5 cellspacing=0 border=0 id="songlisting">
+        <thead>
+        <tr><th width=300>Song Title</th><th width=330>Authors</th><th width=100>CCLI</th><th width=100>Song Pop</th><th colspan=2></th></tr>
+        </thead>
+            {% for song in songs %}
+            <tr class="song">
+            <td>{{song.title}}</td> 
+            <td>{{song.authors.all|join:', '}}</td> 
+            <td>{{song.ccli}}</td> 
+            <td>{{song.total_pop}}</td>
+<!--             <td><a href="{% url 'songs.views.tag_song' song.ccli %}">Tag</a></td> -->
+            <td><div class="arrow"></div></td>
+            </tr>
+            
+            <tr class="details">
+            <td colspan=5>
+                <div>        
+                    <div class='large-l-content'>
+                        <div class='info-header'>Copyright: </div> <div class='info'> 
+                        <!-- handles the 'no publication year condition' -->
+                        {% if song.publication_year != 1111 %}
+                            {{song.publication_year}} 
+                        {% endif %}    
+                            {{song.publisher.all|join:', '}}</div> <br>
+                        <div class='info-header'>Original Key: </div> <div class='info'> {{song.original_key}}</div> <br>
+                        <div class='info-header'>Key Line: </div> <div class='info'> {{song.key_line}}</div> <br>
+                        
+                    </div>
+<!--                     <div class='small-r-content'>
+                        Song Popularity: {{song.popularity}}
+                            {% for SV in song.songverses_set.all %}
+                                {{SV.verse}} - {{SV.SV_popularity}} <br>
+                            {% endfor %}
+                    </div> -->
+                </div>
+            </td> 
+            </td>
+            {% endfor %}
+        </table>
+        
+    {% else %}
+        <br>
+        <p>No songs matched {{query}}.</p>
+    {% endif %}
+{% endif %}
+
+
+{% if song_chords %}
+    {% if multipage %}
+    <ul class="pager">
+        <li><a href="" id="slider-prev-top">Previous</a></li>
+        <li><a href="" id="slider-next-top">Next</a></li>
+        <!-- <li><a href="" id="try">Try</a></li> -->
+    </ul>
+    {% endif %}
+    <ul class="bxslider">
+        {% for song_html in song_chords %}
+            <li><div>{{song_html | safe}}</div></li>
+        {% endfor %}
+    </ul>
+    {% if multipage %}
+    <ul class="pager">
+        <li><a href="" id="slider-prev-bot">Previous</a></li>
+        <li><a href="" id="slider-next-bot">Next</a></li>
+    </ul>
+    
+    {% endif %}
+{% endif %}
+
+
+{% if archive_setlist %}
+    <h3>
+        {{archive_setlist.date}} <br>
+    </h3>
+
+    <ul class="list-group">
+        {% if archive_setlist.notes %}
+        <li class="list-group-item list-group-item-info">
+            <h4 class="list-group-item-heading">Setlist Notes:</h4>
+            <p class="list-group-item-text">{{archive_setlist.notes|linebreaksbr}}</p>
+        </li>
+        {% endif %}
+    {% for setlist_song in setlist_songs %}
+        <li class="list-group-item">
+            <div class="row">
+                <div class="col-md-8">
+                    {{setlist_song.song.title}}
+                </div>
+                <div class="col-md-2">
+                    Key of {{setlist_song.key}}
+                </div>
+            </div>
+            {% if setlist_song.notes %}
+            <div class="row">
+                <div class="col-md-12">
+                    {{setlist_song.notes}}
+                </div>
+            </div>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+
+{% endif %}

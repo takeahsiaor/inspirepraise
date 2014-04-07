@@ -1,0 +1,33 @@
+<html>
+<head>
+    {% load staticfiles %}
+    <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div class="container">
+<div class="row">
+    <div class="col-md-12">
+    <h2>{{song.title}}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class='info-header'>CCLI: </div> <div class='info'> {{song.ccli}}</div> <br>
+        <div class='info-header'>Author(s): </div> <div class='info'> {{song.authors.all|join:', '}}</div> <br>
+
+        <div class='info-header'>Copyright: </div> <div class='info'> 
+        <!-- handles the 'no publication year condition' -->
+        {% if song.publication_year != 1111 %}
+            {{song.publication_year}} 
+        {% endif %}    
+            {{song.publisher.all|join:', '}}</div> <br>
+        <div class='info-header'>Original Key: </div> <div class='info'> {{song.original_key}}</div> <br>
+        <div class='info-header'>Key Line: </div> <div class='info'> {{song.key_line}}</div> <br>
+    
+    </div>
+</div>
+</div>
+</body>
+</html>

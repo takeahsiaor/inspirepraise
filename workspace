@@ -1,0 +1,112 @@
+<NotepadPlus>
+    <Project name="WorshipVerse">
+        <File name="worship\backends.py" />
+        <File name="worship\settings.py" />
+        <File name="songs\admin.py" />
+        <File name="songs\forms.py" />
+        <File name="songs\functions.py" />
+        <File name="songs\models.py" />
+        <File name="songs\populate_verses.py" />
+        <File name="songs\search_indexes.py" />
+        <File name="songs\tests.py" />
+        <File name="songs\views.py" />
+        <File name="worship\urls.py" />
+        <File name="songs\urls.py" />
+        <File name="songs\tests.py" />
+        <Folder name="CSS">
+            <File name="songs\static\songs\spinner.css" />
+            <File name="songs\static\songs\style.css" />
+            <File name="songs\static\songs\admin\css\widgets.css" />
+            <File name="songs\static\songs\simple-pagination\simplePagination.css" />
+        </Folder>
+        <Folder name="JS">
+            <File name="songs\static\songs\archive_set_list.js" />
+            <File name="songs\static\songs\dynamic_populate_songs.js" />
+            <File name="songs\static\songs\dynamic_populate.js" />
+            <File name="songs\static\songs\django-admin.multiselect.js" />
+            <File name="songs\static\songs\simple-pagination\jquery.simplePagination.js" />
+            <File name="songs\static\songs\search_verses.js" />
+            <File name="songs\static\songs\search_songs.js" />
+            <File name="songs\static\songs\set_list.js" />
+            <File name="songs\static\songs\tag_verses.js" />
+        </Folder>
+        <Folder name="Tooltip">
+            <File name="songs\static\songs\tooltip\script.js" />
+            <File name="songs\static\songs\tooltip\style.css" />
+        </Folder>
+        <Folder name="Shadowbox">
+            <File name="songs\static\songs\shadowbox\shadowbox.css" />
+            <File name="songs\static\songs\shadowbox\shadowbox.js" />
+        </Folder>
+        <Folder name="templates">
+            <File name="songs\templates\archived_setlist.html" />
+            <File name="songs\templates\403.html" />
+            <File name="songs\templates\404.html" />
+            <File name="songs\templates\add_book.html" />
+            <File name="songs\templates\add_widget.html" />
+            <File name="songs\templates\base.html" />
+            <File name="songs\templates\base_home.html" />
+            <File name="songs\templates\contact_form.html" />
+            <File name="songs\templates\contact_thanks.html" />
+            <File name="songs\templates\edit_form.html" />
+            <File name="songs\templates\form.html" />
+            <File name="songs\templates\format_as_option_list.html" />
+            <File name="songs\templates\home.html" />
+            <File name="songs\templates\leave_ministry_confirm.html" />
+            <File name="songs\templates\lookup.html" />
+            <File name="songs\templates\ministry_profile.html" />
+            <File name="songs\templates\pop_up_form.html" />
+            <File name="songs\templates\pop_lookup.html" />
+            <File name="songs\templates\profile.html" />
+            <File name="songs\templates\song_info_pop.html" />
+            <File name="songs\templates\search.html" />
+            <File name="songs\templates\search_form_title.html" />
+            <File name="songs\templates\search_form_verses.html" />
+            <File name="songs\templates\search_results.html" />
+            <File name="songs\templates\search_results_verses.html" />
+            <File name="songs\templates\setlist.html" />
+            <File name="songs\templates\songs_with_chords.html" />
+            <File name="songs\templates\success.html" />
+            <File name="songs\templates\tag_verses.html" />
+            <Folder name="registration">
+                <File name="songs\templates\registration\activate.html" />
+                <File name="songs\templates\registration\activation_complete.html" />
+                <File name="songs\templates\registration\activation_email.txt" />
+                <File name="songs\templates\registration\activation_email_subject.txt" />
+                <File name="songs\templates\registration\login.html" />
+                <File name="songs\templates\registration\password_reset_complete.html" />
+                <File name="songs\templates\registration\password_reset_confirm.html" />
+                <File name="songs\templates\registration\password_reset_done.html" />
+                <File name="songs\templates\registration\password_reset_email.html" />
+                <File name="songs\templates\registration\password_reset_form.html" />
+                <File name="songs\templates\registration\password_reset_subject.txt" />
+                <File name="songs\templates\registration\registration_complete.html" />
+                <File name="songs\templates\registration\registration_form.html" />
+            </Folder>
+        </Folder>
+        <Folder name="AutoSuggest">
+            <Folder name="lib">
+                <Folder name="jasmine-1.1.0">
+                    <File name="songs\static\songs\jquery-suggest\lib\jasmine-1.1.0\jasmine-html.js" />
+                    <File name="songs\static\songs\jquery-suggest\lib\jasmine-1.1.0\jasmine.css" />
+                    <File name="songs\static\songs\jquery-suggest\lib\jasmine-1.1.0\jasmine.js" />
+                    <File name="songs\static\songs\jquery-suggest\lib\jasmine-1.1.0\jasmine_favicon.png" />
+                    <File name="songs\static\songs\jquery-suggest\lib\jasmine-1.1.0\MIT.LICENSE" />
+                </Folder>
+                <File name="songs\static\songs\jquery-suggest\lib\jquery-1.6.2.js" />
+            </Folder>
+            <Folder name="spec">
+                <File name="songs\static\songs\jquery-suggest\spec\index.html" />
+                <File name="songs\static\songs\jquery-suggest\spec\suggest_spec.js" />
+            </Folder>
+            <Folder name="src">
+                <File name="songs\static\songs\jquery-suggest\src\jquery.suggest.js" />
+            </Folder>
+            <File name="songs\static\songs\jquery-suggest\.gitignore" />
+            <File name="songs\static\songs\jquery-suggest\GPL-LICENSE.txt" />
+            <File name="songs\static\songs\jquery-suggest\MIT-LICENSE.txt" />
+            <File name="songs\static\songs\jquery-suggest\package.json" />
+            <File name="songs\static\songs\jquery-suggest\README.markdown" />
+        </Folder>
+    </Project>
+</NotepadPlus>

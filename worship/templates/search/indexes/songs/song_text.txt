@@ -1,0 +1,8 @@
+{{ object.title}}
+
+{{ object.key_line}}
+
+{% for author in object.authors.all %}
+    {{ author.full_name}}
+
+{% endfor %}

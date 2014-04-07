@@ -1,0 +1,1 @@
+InspirePraise account verification - expires in {{expiration_days}} days.

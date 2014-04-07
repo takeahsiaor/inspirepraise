@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Leave Ministry Confirmation</h1>
+
+<h2>Are you sure you want to leave {{ministry.name}}</h2>
+
+
+<h3><a href="#">Yes</a> 
+
+<a href="{% url 'songs.views.ministry_profile' ministry.id %}">No</a></h3>
+{% endblock %}

@@ -1,0 +1,363 @@
+
+{% extends "base.html" %}
+
+
+{% load staticfiles %}
+{% load songs_extras %}
+{% block headloaders %} 
+<script src="{% static 'songs/set_list.js' %}"></script>   
+<script src="{% static 'songs/bxslider/jquery.bxslider.js' %}"></script>   
+<script src="{% static 'songs/sortable/jquery.sortable.js' %}"></script>  
+<script src="{% static 'songs/pnotify/jquery.pnotify.min.js' %}"></script>
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
+<link href="{% static 'songs/bxslider/jquery.bxslider.css'%}" rel="stylesheet" type="text/css">
+<style>
+.sortable {
+    list-style-type: none;
+}
+.list-group-item {
+  cursor: url(https://mail.google.com/mail/images/2/openhand.cur), default !important;
+}
+/* to keep lyrics from running into each other */
+td{
+    padding-right:3px;
+}
+.sortable-placeholder {
+    height: 50px;
+    border: 2px dashed #add38d !important;
+    background-color: #f6fbf4 !important;
+}
+</style>
+<script type="text/javascript">  
+    var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
+    var archived = jQuery.parseJSON('{{request.session.archived|jsonify }}');
+    //setlist is now an array of arrays of the form ((ccli,key),(ccli,key))
+    var setlist_length = setlist.length;
+
+</script>
+{% endblock %}
+
+
+{% block title %} | {{title}}{% endblock %}
+
+{% block content %}
+<h1>My Setlist</h1>
+
+<div id="setlist_results">
+
+    <!-- not logged in  -->
+    {% if song_optionlist %} 
+    <div class="row">
+        <div class="col-md-9">
+            <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
+            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button> 
+            <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
+                id="refresh-chords">Refresh Chord Preview</button>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="pull-right btn btn-danger"  id="clear_setlist">Delete Set List</button>
+        </div>
+    </div>
+    <br>
+
+        <ul class="sortable list-group">
+        {% for song, option_list in song_optionlist %}
+            {% if song.chords %}
+                <li class="list-group-item" name="{{song.ccli}}">
+                <div class="row">
+                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-4">
+                        <div class="col-md-4">
+                            <select class="form-control transpose-value" name="{{song.ccli}}" 
+                                id="{{song.ccli}}-transpose">
+                                {{option_list|safe}}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-default reset-key" data-toggle="tooltip"
+                                data-placement="top" title="Reset key" name="{{song.ccli}}">
+                                <span class="glyphicon glyphicon-repeat"></span>
+                            </button>
+                        </div>
+                        <div class="col-md-4 col-md-offset-1">
+                            <button type="button" class="btn btn-default refresh-chords jump" 
+                                name="{{forloop.counter0}}" id="{{song.ccli}}-pdf">Jump to Song</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-default download-single" name="{{song.ccli}}">
+                            <span class="glyphicon glyphicon-download-alt"></span> Chords</button>
+                        <button type="button" class="btn btn-default download-lyrics" name="{{song.ccli}}">
+                            <span class="glyphicon glyphicon-download-alt"></span> Lyrics</button>
+                    </div>
+
+                    <div class="col-md-1">
+                        <button type="button" class="close remove-song" aria-hidden="true" 
+                            name="{{song.ccli}}">&times;</button>
+                    </div>
+                </div>
+                </li>
+            {% else %}
+                <li class="list-group-item" name="{{song.ccli}}">
+                <div class="row">
+                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-2">
+                        <p>No Chords Available</p>
+                    </div>
+                    <div class="col-md-1">
+                        <select class="transpose-value" name="{{song.ccli}}" id="{{song.ccli}}-transpose" style="visibility:hidden">
+                            <option selected>A</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 col-md-offset-5">
+                        <button type="button" class="close remove-song" aria-hidden="true" name="{{song.ccli}}">&times;</button>
+                    </div>
+                </div>
+                </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+
+
+    
+    <!-- logged in -->
+    {% elif song_optionlist_setlistsong %}
+        <div class="setlist-notes-display">
+            {% if current_setlist.notes %}
+            <div class="alert alert-info">
+                <h4>Setlist Notes:</h4>
+                <p>{{current_setlist.notes|linebreaksbr}}</p>
+            </div>
+
+            {% endif %}
+        </div>
+        <div class="row">
+        <div class="col-md-9">
+            <button type="button" class="btn btn-default archive-setlist">Archive Setlist</button>
+            <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
+            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>        
+            <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
+            <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
+                id="refresh-chords">Refresh Chord Preview</button>
+        </div>
+        <div class="col-md-3">
+           <button type="button" class="btn btn-danger pull-right"  id="clear_setlist">Delete Set List</button>
+            <!-- <button type="button" class="btn btn-default testing">test</button> -->
+        </div>
+        </div>
+        <br>
+        <ul class="sortable list-group">
+        {% for song, option_list, setlist_song in song_optionlist_setlistsong %}
+            {% if song.chords %}
+                <li class="list-group-item" name="{{song.ccli}}">
+                <div class="row">
+                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-4">
+                        <div class="col-md-4">
+                            <select class="form-control transpose-value" name="{{song.ccli}}" 
+                                id="{{song.ccli}}-transpose">
+                                {{option_list|safe}}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-default reset-key" data-toggle="tooltip" 
+                                data-placement="top" title="Reset key" name="{{song.ccli}}">
+                                <span class="glyphicon glyphicon-repeat"></span>
+                            </button>
+                        </div>
+                        <div class="col-md-4 col-md-offset-1">
+                            <button type="button" class="btn btn-default refresh-chords jump" name="{{forloop.counter0}}" 
+                                id="{{song.ccli}}-pdf">Jump to Song</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-default download-single" name="{{song.ccli}}">
+                            <span class="glyphicon glyphicon-download-alt"></span> Chords</button>
+                        <button type="button" class="btn btn-default download-lyrics" name="{{song.ccli}}">
+                            <span class="glyphicon glyphicon-download-alt"></span> Lyrics</button>
+                    {% if setlist_song.notes %}
+                        <button type="button" class="btn btn-success song-note" id="song-note-button-{{song.ccli}}" name="{{song.ccli}}" 
+                            data-toggle="modal" data-target="#song-note-modal-{{song.ccli}}"><span class="glyphicon glyphicon-comment"></span> 
+                            Add/Edit Notes</button>
+                    {% else %}
+                         <button type="button" class="btn btn-default song-note" id="song-note-button-{{song.ccli}}" name="{{song.ccli}}" 
+                            data-toggle="modal" data-target="#song-note-modal-{{song.ccli}}"><span class="glyphicon glyphicon-comment"></span> 
+                            Add/Edit Notes</button>                   
+                    {% endif %}
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <button type="button" class="close remove-song" aria-hidden="true" name="{{setlist_song.song.ccli}}">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+                <!-- modal for each song -->
+                <div class="modal fade song-note-modal" name={{song.ccli}} id="song-note-modal-{{song.ccli}}" 
+                  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"> 
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel">Song Notes</h4>
+                      </div>
+                      <div class="modal-body" id="modal-body">
+                        <span class="help-block">Add or edit any notes you may have about this song.</span>
+                        <textarea class="form-control" id="song-notes-{{song.ccli}}" rows="6">{{setlist_song.notes}}</textarea>
+                      </div>
+                      <div class="modal-footer">
+                        <div class="col-md-12">
+                        <button type="button" class="btn btn-success" data-dismiss="modal">Accept</button>
+                        <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger clear-song-notes-text" name={{song.ccli}}>
+                            Clear</button> 
+                        </div>
+                      </div>
+                    </div><!-- /.modal-content -->
+                  </div><!-- /.modal-dialog -->
+                </div><!-- /.modal -->           
+                </li>
+            {% else %}
+                <li class="list-group-item" name="{{song.ccli}}">
+                <div class="row">
+                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-2">
+                        <p>No Chords Available</p>
+                    </div>
+                    <div class="col-md-1">
+                        <select class="transpose-value" name="{{song.ccli}}" id="{{song.ccli}}-transpose" style="visibility:hidden">
+                            <option selected>A</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 col-md-offset-5">
+                        <button type="button" class="close remove-song" aria-hidden="true" name="{{song.ccli}}">&times;</button>
+                    </div>
+                </div>
+                </li>
+            {% endif %}
+            
+        {% endfor %}
+        </ul>
+
+
+
+    {% else %}
+        <div>No songs in setlist</div>
+        <br>
+
+    {% endif %}
+    
+</div>
+<div id="testarea">
+
+</div>
+
+<!-- modal for setlist -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Setlist Notes</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <span class="help-block">Add or edit any notes you may have about this setlist.</span>
+        <textarea class="form-control" id="setlist-notes" rows="6">{{current_setlist.notes}}</textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-dismiss="modal">Accept</button>
+        <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger clear-setlist-notes-text">Clear</button> 
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+<script>
+$('.clear-setlist-notes-text').click(function() {
+    $('#setlist-notes').val('');
+    //$('.setlist-notes-display').empty()
+});
+
+$('.clear-song-notes-text').click(function(){
+    var ccli = $(this).attr('name');
+    $('#song-notes-'+ccli).val('');
+});
+
+
+$('.btn').tooltip(); //activates tooltips
+
+$('.sortable').sortable().bind('sortupdate', function() {
+    var ccli_str = '';
+    $(".sortable>li").each(function(){
+        var ccli = $(this).attr('name');
+        var key = $('#'+ccli+'-transpose').val();
+        ccli_str = ccli_str + ccli + '-'+key+','
+    });
+    $.get('/update-setlist/', {'ccli':ccli_str, 'reorder':true}, function(response){
+        $('#refresh-chords').trigger('click');
+    });
+    
+    //this is to solve issue of sorting then clicking jump and jumping to the wrong song
+    //updates name to correct index
+    $('.list-group-item').each(function(){
+        var index = $(this).index();
+        $(this).find('.jump').attr('name', index);
+    });
+    
+});
+
+//handle cancel flag to preserve contents of notes
+var cancel;
+$('.song-note').click(function(){
+    cancel = false;
+});
+$('.setlist-note').click(function(){
+    cancel = false;
+});
+$('.cancel').click(function(){
+    cancel = true;
+});
+
+
+$('.song-note-modal').on('hide.bs.modal', function(e){
+    var ccli = $(this).attr('name');
+    var song_notes = $('#song-notes-'+ccli).val();
+    $.get('/update-setlist/', {'ccli':ccli, 'song-notes':song_notes, 'cancel':cancel}, function(response){
+        $('#song-notes-'+ccli).val(response);
+        var content_test = $('#song-notes-'+ccli).val();
+        $('#song-note-button-'+ccli).attr('class', 'btn btn-success song-note');
+        if (content_test == ''){
+            $('#song-note-button-'+ccli).attr('class', 'btn btn-default song-note');
+        }
+        $('#refresh-chords').trigger('click');
+    });
+
+});
+
+$('#myModal').on('hide.bs.modal', function(e){
+    var setlist_notes = $('#setlist-notes').val();
+    $.get('/update-setlist/', {'ccli':'1', 'setlist-notes':setlist_notes, 'cancel':cancel}, function(response){
+        $('#setlist-notes').val(response);
+        response_br = response.replace(/\n/g, '<br />'); //replaces newline char for br for purpose of refreshing html
+        var setlistnotes_display_html = '<div class="alert alert-info"><h4>Setlist Notes:</h4><p>'+response_br+'</p></div>'
+        var content_test = $('#setlist-notes').val();
+        if (content_test == ''){
+            setlistnotes_display_html = '';
+        }
+        $('.setlist-notes-display').empty();
+        $('.setlist-notes-display').html(setlistnotes_display_html);
+    });
+});
+//$('[data-toggle="popover"]').popover({
+    //'trigger': 'hover',
+   // 'placement': 'top',
+    //delay:{show:100, hide:1000},
+//});
+
+</script>
+{% endblock %}

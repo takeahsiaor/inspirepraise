@@ -1,0 +1,147 @@
+
+{% extends "base.html" %}
+
+
+{% load staticfiles %}
+{% block headloaders %} 
+
+<script type="text/javascript" src="{% static 'songs/tag_verses.js' %}"></script>
+<link href="{% static 'songs/spinner.css'%}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{% static 'songs/shadowbox/shadowbox.js' %}">
+    Shadowbox.init({
+        handleOversize: "drag",
+        modal: true
+</script>
+<link href="{% static 'songs/shadowbox/shadowbox.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/pnotify/jquery.pnotify.min.js' %}"></script>
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
+<script src="{% static 'songs/bootstrap/js/typeahead.js' %}"></script>  
+<link href="{% static 'songs/bootstrap/css/typeahead.js-bootstrap.css'%}" rel="stylesheet" type="text/css">
+<script type="text/javascript">  
+    $(document).ready(function(){
+        $('form').submit(function(){
+            $('.small_spin').attr('class', 'small_spinner');
+        });
+        
+        $('#search').typeahead({
+            local:["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua",
+                    "Judges", "Ruth", '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', 
+                    '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job',
+                    'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah',
+                    'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+                    'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah',
+                    'Haggai', 'Zechariah', 'Malachi', 'Matthew', 'Mark', 'Luke', 'John',
+                    'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 
+                    'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
+                    '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon',
+                    'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+                    'Jude', 'Revelation']
+        });
+        
+    });
+</script>  
+    <style>
+        tr.song {
+            cursor:pointer;
+        }
+
+    </style>
+
+
+{% endblock %}
+
+{% block title %} | {{title}}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <h1>{{header1}}</h1>
+    </div>
+    <div class="col-md-7" id="alerts">
+        <div class="alert"></div>
+    </div>
+</div>
+
+Can't find your song? <a href="#" onclick="window.open('../lookup/?_popup=1', '_blank', 'height=500,width=800');">Import from CCLI</a>.
+<br><br>
+
+<div class="row">
+    
+    <div class="col-md-2">
+        <label class="sr-only" for="search">Enter Verses</label>
+        <input class="form-control" type="text" name="verse_query" id="search" size='25' placeholder="Enter Verses"/>
+    </div>
+    <div class="col-md-1">
+        <input class="form-control" type="button" name="add_verses" value="Add" />
+    </div>
+    
+    <div class="col-md-1">
+    </div>
+
+    <div class='col-md-6'>
+        <input class="form-control" type="text" name="song_query" id="song_query" placeholder="Enter Title, Authors, or Lyrics"> 
+    </div>
+    <div class="col-md-1">
+        <input class="form-control" type="button" name="search_songs" id="search_songs" value="Search"> 
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <br>
+        <p>Selected Scripture:</p>
+        <div >
+            <table class="table" id='verse_results'>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-1">
+    </div>
+    <div class='col-md-7'>
+
+        <div id='search_results'> 
+
+        </div>
+
+    </div>
+    
+</div>
+    
+    
+    {% if form.errors %}
+        <p style="color: red;">
+            Please correct the error{{ form.errors|pluralize }} below.
+        </p>
+    {% endif %}
+    
+
+
+    <form action="" method="post">
+        <table>
+            {{ form.as_table }}
+            
+        </table>
+        {% csrf_token %}
+<!--         <input type="submit" value="Submit"> -->
+    </form>
+    
+    
+<!--  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Song at a glance...</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+{% endblock %}

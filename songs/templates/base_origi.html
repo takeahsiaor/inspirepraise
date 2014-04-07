@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>WorshipVerse {% block title %}{% endblock %}</title>
+    {% load staticfiles %}
+    <link href="{% static 'songs/style.css'%}" rel="stylesheet" type="text/css">
+    <!-- <script src="{% static 'songs/jquery-1.10.2.min.js' %}"></script> -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+    <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
+    {% block headloaders %}{% endblock %}
+    
+</head>
+<body>
+
+<div id="header">
+<div class="menu-container">
+    <div>
+        <a href="{% url 'songs.views.home' %}"><img id='logo' class="center" src="{% static 'songs/logo2.png' %}" /></a>
+    </div>
+
+
+    <div class="parent">
+        <a href="{% url 'songs.views.home' %}" class="button">Home</a>
+    </div>
+
+<!--     <div class="parent">
+        <a href="{% url 'songs.views.profile' %}" class="button">Profile</a>
+    </div> -->
+
+    <div class="parent">
+        <a href="#" class="button">Search</a>
+        <div class="sub">
+            <a href="{% url 'songs.views.search_verses' %}" >By Verses</a>
+            <a href="{% url 'songs.views.search_info' %}" class="bottom">By Song Info</a>
+        </div>
+    </div>
+    <div class="parent">
+        <a href="{% url 'songs.views.tag_verses' %}" class="button">Tag</a>
+
+    </div>
+    <div class="parent">
+        <a href="{% url 'songs.views.lookup' %}" class="button">Add Song</a>
+    </div>
+    <div class="parent">
+        <a href="{% url 'songs.views.contact' %}" class="button">Contact Us</a>
+    </div>
+
+
+
+
+</div> <!-- end header container -->
+</div> <!-- end header -->
+
+<!-- <a href="{% url 'songs.views.profile' %}"></a> -->
+
+<div id="container">
+    <div id="content" class="container">
+        {% if user.is_authenticated %}
+            <div id="login_header" class="logged_in">
+                <p>Welcome {{user.username}}! / <a href="{% url 'songs.views.logout_view' %}">Logout</a><br>
+                    <br> <a id="setlist-link" href="{% url 'songs.views.setlist' %}">My Set List [{{request.session.setlist|length}} Song(s)]</a>
+                </p>
+            </div>
+        {% else %}
+            <div id="login_header">
+                <p><a href="{% url 'songs.views.login_user' %}">Login</a> / <a href="{% url 'registration_register'%}">Register</a><br>
+                   <br> <a id="setlist-link" href="{% url 'songs.views.setlist' %}">My Set List [{{request.session.setlist|length}} Song(s)]</a>
+                </p>
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<div id="footer">
+    <div class='container'>
+    {% block footer %}
+    <p>Copyright 2013 - WorshipVerse</p>
+    {% endblock %}
+    </div>
+</div>
+
+</body>
+</html>

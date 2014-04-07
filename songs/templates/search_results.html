@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block headloaders %}
+{% load staticfiles %}
+{% load songs_extras %}
+    <link href="{% static 'songs/spinner.css'%}" rel="stylesheet" type="text/css">
+    <script src="{% static 'songs/pnotify/jquery.pnotify.min.js' %}"></script>
+    <link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
+    <link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
+    <script src="{% static 'songs/set_list.js' %}"></script>    
+   
+    <script src="{% static 'songs/simple-pagination/jquery.simplePagination.js' %}"></script>
+    <link href="{% static 'songs/simple-pagination/simplePagination.css'%}" rel="stylesheet" type="text/css">
+    
+    <script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
+    <script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
+    <script type="text/javascript">  
+        var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
+        var setlist_length = setlist.length;
+        $(document).ready(function(){
+            $("#songlisting tr:not(.song)").hide();
+            $("#songlisting tr:first-child").show();
+            
+            $("#songlisting tr.song").click(function(){
+                if ($(this).next("tr").is(":visible")){
+                    $(".details").hide();
+                }
+                else{
+                    $(".details").hide();
+                    $(this).next("tr").show();
+                }
+
+                $(this).find(".arrow").toggleClass("up");
+            });
+            
+            
+            $(function() {
+                $("#pagination").pagination({
+                    pages: {{ songs.paginator.num_pages }},
+                    prevText: "&laquo;",
+                    nextText: "&raquo;",
+                    hrefTextPrefix: '?query={{query}}&page=',
+                    currentPage: {{ songs.number }},
+                    selectOnClick: false,
+                });
+                
+                if ({{songs.number}} == 1){
+                    $('.prev').parent().attr('class','disabled');
+                }
+                if ({{songs.number}} == {{songs.paginator.num_pages}}){
+                    $('.next').parent().attr('class','disabled');
+                }
+                Ladda.bind('.page-link');
+            });
+            
+
+            
+            $('form').submit(function(){
+                $('.small_spin').attr('class', 'small_spinner');
+            });
+            $('#myModal').on('shown.bs.modal', function () {
+                $('#myModal').animate({ scrollTop: 0 }, 'fast');
+            });
+
+            Ladda.bind('button[type=submit]');
+                   
+        });
+    </script>      
+    <style>
+        tr.song {
+            cursor:pointer;
+        }
+        tr.song:hover{
+            background-color:#E7F3FD;
+        }
+    </style>
+{% endblock %}
+
+{% block title %} | Search results{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+    <h1>Search by Song Information</h1>
+    </div>
+    <div class="col-md-4" id="alerts">
+        
+    </div>
+
+</div>
+
+<p><a href="{% url 'songs.views.search_all' %}">Browse All Songs</a></p>
+<form class="form-horizontal" role="form"> <!-- action="" method="get" -->
+    <div class="form-group row">
+        
+        <div class="col-md-5">
+            <label class="sr-only" for="id_query">Enter Title, Authors, or Lyrics</label>
+            <input type="text" autocomplete="off" class="form-control" id="id_query" name="query" placeholder="Enter Title, Authors, or Lyrics" value="{{query}}">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">Search</button>
+        </div>
+
+    </div>
+    
+</form>
+{% if song_and_key_option_list %}
+
+<div class="row">
+    <div class="col-md-7">
+            Displaying search results for "{{query}}". <br>
+            Can't find the song you're looking for in our database? <a href="{% url 'songs.views.lookup' %}">Import from CCLI.</a>
+    </div>
+
+</div>
+<br>
+<div class="row">
+    <div class="col-md-7">
+        <ul class="pagination" id="pagination">
+        
+        </ul>
+    </div>
+    <div class="col-md-3 col-md-offset-2">
+        <p class="text-right">
+        Showing search results {{songs.start_index}} - {{songs.end_index}} of {{songs.paginator.count}} <br>
+        </p>
+    </div>
+</div>
+
+
+    
+    <table class="table" id="songlisting">
+    <thead>
+    <tr><th>Song Title</th><th>Authors</th><th>CCLI</th><th>Chords</th></tr>
+    </thead>
+        {% for song, option_list in song_and_key_option_list %}
+        <tr class="song" id="{{song.object.ccli}}-row">
+            <td>{{song.object.title}}</td> 
+            <td>{{song.object.authors.all|join:', '}}</td> 
+            <td>{{song.object.ccli}}</td> 
+            {% if song.object.chords %}
+                <td><span class="glyphicon glyphicon-ok"></span></td>
+            {% else %}
+                <td><span class="glyphicon glyphicon-remove"></span></td>
+            {% endif %}
+        </tr>
+        
+        <tr class="details">
+        <td colspan=4>
+
+            <a href="http://www.youtube.com/results?search_query={{song.object.title}}+{{song.object.authors.all.0}}" target="_blank" title="Search Youtube"><img src="{% static 'songs/youtube-small.png'%}" width="45"/></a>
+            <a href="http://www.ultimate-guitar.com/search.php?search_type=title&value={{song.object.title}}" target="_blank" title="Search Ultimate Guitar"><img src="{% static 'songs/ultimateguitar-small.png'%}" /></a>
+            <a href="http://worship-songs-resources.worshiptogether.com/search?w={{song.object.title}} {{song.object.authors.all.0}}" target="_blank" title="Search WorshipTogether"><img src="{% static 'songs/worshiptogether-small.png'%}" /></a>
+
+            <br>
+            <br>
+            <p><b>Copyright</b>: {% if song.object.publication_year != 1111 %}
+                        {{song.object.publication_year}} 
+                    {% endif %}    
+                        {{song.object.publisher.all|join:', '}}</p>
+            <p><b>Original Key:</b> {{song.object.original_key}}</p>
+            <p><b>Key Line:</b> {{song.object.key_line}}</p>
+            
+            {% if song.object.chords %}
+            <div class="row">
+                <div class="col-md-1">
+                    <p>Transpose</p>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control transpose-value" id="{{song.object.ccli}}-transpose">
+                        {{option_list|safe}}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                <button type="button" data-toggle="modal" data-target="#myModal" class="btn btn-default modal-chord-preview" name="{{song.object.ccli}}" id="{{song.object.ccli}}-modal">Preview Chords</button>
+                <button type="button" class="btn btn-default download-single" name="{{song.object.ccli}}">Download Chords</button>
+                <button type="button" class="btn btn-default download-lyrics" name="{{song.object.ccli}}">Download Lyrics</button>
+                </div>
+
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-md-2">
+                    <p>No Chords Available</p>
+                </div>
+            </div>
+            {% endif %}
+            <br>
+            
+            <div class="col-md-3">
+            <input type="button" class="form-control add-button" name="{{song.object.ccli}}" id="{{song.object.ccli}}-add" value="Add to Set List"/>
+            </div>
+            <div class="col-md-3">
+            <input type="button" class="form-control remove-button" name="{{song.object.ccli}}" id="{{song.object.ccli}}-remove" value="Remove from Set List" disabled="true"/>
+            </div>
+                <!--song verse stuff used to live here-->
+        </td> 
+        </tr>
+        {% endfor %}
+    </table>
+    
+{% else %}
+    <p>No songs matched your search criteria.</p>
+{% endif %}
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Chord Preview</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% endblock%}

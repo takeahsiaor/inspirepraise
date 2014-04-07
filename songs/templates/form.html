@@ -1,0 +1,112 @@
+
+{% extends "base.html" %}
+
+
+{% load staticfiles %}
+{% block headloaders %} 
+<script type="text/javascript" src="{% static 'songs/admin/js/admin/RelatedObjectLookups.js'%}"></script>
+<script type="text/javascript" src="{% static 'songs/admin/js/core.js' %}"></script>
+<script type="text/javascript" src="{% static 'songs/admin/js/SelectBox.js' %}"></script>
+<script type="text/javascript" src="{% static 'songs/django-admin.multiselect.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'songs/admin/css/widgets.css' %}" />
+
+{% if add_song %}
+<script src="{% static 'songs/dynamic_populate.js' %}"></script>
+{% endif %}
+
+{% if tag_verses %}
+
+<script src="{% static 'songs/tooltip/script.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'songs/tooltip/style.css' %}" />
+
+<script src="{% static 'songs/dynamic_populate_songs.js' %}"></script>
+<script src="{% static 'songs/dynamic_populate.js' %}"></script>
+
+
+{% endif %}
+
+{% if tag_song %}
+<script src="{% static 'songs/dynamic_populate.js' %}"></script>
+{% endif %}
+
+{% endblock %}
+
+<!-- <script>
+$(document).ready(function () {
+    jQuery.each($("select[multiple]"), function () {  
+ // "Locations" can be any label you want  
+    SelectFilter.init(this.id, "", 0, "");  
+});  
+});
+
+
+</script> -->
+
+
+{% block title %} | {{title}}{% endblock %}
+
+{% block content %}
+
+    <h1>{{header1}}</h1>
+    {% if add_song %}
+        <p>Would you rather import song information from <a href="{% url 'songs.views.lookup' %}">CCLI</a>?</p>
+    {% endif %}
+    {% if not tag_verses and not tag_song %}
+        <p>Underlined fields are required</p>
+    {% endif %}
+    {% if book.name %}
+    <h1>Chapters for {{book.name}} </h1>
+    {% endif %}
+    
+    {% if success %}
+    <p>Submission Successful!</p>
+    {% endif %}
+    
+    
+    
+    {% if form.errors %}
+        <p style="color: red;">
+            Please correct the error{{ form.errors|pluralize }} below.
+        </p>
+    {% endif %}
+    
+
+    
+    
+    {% if tag_song %}
+        <h2>{{song.title}}</h2>
+        <div class='l-content'>
+            <div class='info-header'>CCLI: </div> <div class='info'> {{song.ccli}}</div> <br>
+            <div class='info-header'>Author(s): </div> <div class='info'> {{song.authors.all|join:', '}}</div> <br>
+
+            <div class='info-header'>Copyright: </div> <div class='info'> 
+            <!-- handles the 'no publication year condition' -->
+            {% if song.publication_year != 1111 %}
+                {{song.publication_year}} 
+            {% endif %}    
+                {{song.publisher.all|join:', '}}</div> <br>
+            <div class='info-header'>Original Key: </div> <div class='info'> {{song.original_key}}</div> <br>
+            <div class='info-header'>Key Line: </div> <div class='info'> {{song.key_line}}</div> <br>
+        
+        </div>
+
+    {% endif %}
+    
+    
+    {% if chap %}
+    <form action="/book/chapters/" method="post">
+    {% else %}
+    <form action="" method="post">
+    {% endif %}
+    
+
+        <table>
+            {{ form.as_table }}
+            
+        </table>
+        {% csrf_token %}
+        <input type="submit" value="Submit">
+    </form>
+    
+
+{% endblock %}

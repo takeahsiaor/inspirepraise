@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ministry.name}}</h1>
+<h4>{{ministry.address}} <br> {{ministry.city}}, {{ministry.state_province}} {{ministry.country}} <br>
+Ministry Code: {{ministry.id}}
+</h4>
+
+{% if membership.admin %}
+<a href="{% url 'songs.views.invite_to_ministry' ministry.id %}">Invite to join!</a><br>
+{% endif %}
+
+<a href="{% url 'songs.views.leave_ministry_confirm' ministry.id %}">Leave Ministry</a>
+<br><br>
+<div>
+    Members
+    <ul>
+        {% for member in members %}
+            {% if member.user.first_name and member.user.last_name %}
+            <li>{{member.user}} - {{member.user.first_name}} {{member.user.last_name}}</li>
+            {% else %}
+            <li>{{member.user}} - {{member.user.email}}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+<p>
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+</p>
+{% endblock %}

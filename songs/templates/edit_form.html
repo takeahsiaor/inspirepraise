@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+
+
+
+{% block title %} | {{title}}{% endblock %}
+
+{% block content %}
+
+<h1>{{header1}}</h1>
+    
+    
+    
+    {% if form.errors %}
+        <p style="color: red;">
+            Please correct the error{{ form.errors|pluralize }} below.
+            <br>
+            {{error}}
+        </p>
+    {% endif %}
+    
+    {% if error %}
+        <p style="color: red;">
+            {{error}}
+        </p>
+    {% endif %}
+    
+    {% if profile %}
+    <h2>Current Profile</h2>
+    <p>First Name: {{user.first_name}}<br>
+    Last Name: {{user.last_name}}<br>
+    Email: {{user.email}}<br>
+    
+    {% if profile.ministries.all %}
+    Ministry: | {% for ministry in profile.ministries.all %}
+                    <a href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a> |
+                {% endfor %}
+                <br>
+    {% endif %}
+
+
+    
+    {% endif %}
+    
+
+    <form action="" method="post">
+
+        <table>
+            {{ form.as_table }}
+            {% if profile %}
+                <tr>
+                <th>Ministry Code:</th><td><input id="id_ministry" name="ministry_code" type="text"></td>
+                </tr>
+            {% endif %}
+        </table>
+        {% csrf_token %}
+        <input type="submit" value="Submit">
+    </form>
+    
+
+{% endblock %}

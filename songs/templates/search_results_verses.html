@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block headloaders %}
+{% load staticfiles %}
+{% load songs_extras %}
+<link href="{% static 'songs/spinner.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/set_list.js' %}"></script>    
+<script src="{% static 'songs/bootstrap/js/typeahead.js' %}"></script>  
+<script src="{% static 'songs/pnotify/jquery.pnotify.min.js' %}"></script>
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
+<link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
+<link href="{% static 'songs/bootstrap/css/typeahead.js-bootstrap.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/simple-pagination/jquery.simplePagination.js' %}"></script>
+<link href="{% static 'songs/simple-pagination/simplePagination.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
+<script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
+
+<script type="text/javascript">  
+    var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
+    var setlist_length = setlist.length;
+    $(document).ready(function(){
+        $("#songlisting tr:not(.song)").hide();
+        $("#songlisting tr:first-child").show();
+        
+        $("#songlisting tr.song").click(function(){
+            if ($(this).next("tr").is(":visible")){
+                $(".details").hide();
+            }
+            else{
+                $(".details").hide();
+                $(this).next("tr").show();
+            }
+
+            $(this).find(".arrow").toggleClass("up");
+        });
+        
+        
+        $('#myModal').on('shown.bs.modal', function () {
+            $('#myModal').animate({ scrollTop: 0 }, 'fast');
+        });
+                       
+        $(function() {
+            $("#pagination").pagination({
+                pages: {{ songs.paginator.num_pages }},
+                prevText: "&laquo;",
+                nextText: "&raquo;",
+                hrefTextPrefix: '?query={{query}}&page=',
+                currentPage: {{ songs.number }},
+                selectOnClick: false,
+            });
+            
+            if ({{songs.number}} == 1){
+                $('.prev').parent().attr('class','disabled');
+            }
+            if ({{songs.number}} == {{songs.paginator.num_pages}}){
+                $('.next').parent().attr('class','disabled');
+            }
+            Ladda.bind('.page-link');
+        });
+        
+        Ladda.bind('button[type=submit]');
+        $('#id_query').typeahead({
+            local:["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua",
+                    "Judges", "Ruth", '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', 
+                    '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job',
+                    'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah',
+                    'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+                    'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah',
+                    'Haggai', 'Zechariah', 'Malachi', 'Matthew', 'Mark', 'Luke', 'John',
+                    'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 
+                    'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
+                    '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon',
+                    'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+                    'Jude', 'Revelation']
+        });
+        
+        
+    });
+</script> 
+<style>
+tr.song {
+    cursor:pointer;
+}
+tr.song:hover{
+    background-color:#E7F3FD;
+}
+</style>
+{% endblock %}
+
+{% block title %} | Search results{% endblock %}
+
+{% block content %}
+<h1>Search by Verse</h1>
+
+<form class="form-inline" role="form"> <!-- action="" method="get" -->
+    <div class="form-group">
+            <input type="text" autocomplete="off" class="form-control" id="id_query" name="query" placeholder="Enter Verses" value="{{query}}">
+    </div>
+    <!-- {% csrf_token %} -->
+    <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6"><span class="ladda-label">Search</span></button>
+</form>
+
+{% if song_and_key_option_list %}
+<br>
+<div class="row">
+    <div class="col-md-7">
+            Displaying search results for "{{query}}".
+    </div>
+
+</div>
+<br>
+<div class="row">
+    <div class="col-md-7">
+        <ul class="pagination" id="pagination">
+        
+        </ul>
+    </div>
+    <div class="col-md-3 col-md-offset-2">
+        <p class="text-right">
+        Showing search results {{songs.start_index}} - {{songs.end_index}} of {{songs.paginator.count}} <br>
+        </p>
+    </div>
+</div>
+
+    <table class="table" id="songlisting">
+    <thead>
+    <tr><th>Song Title</th><th>Authors</th><th>CCLI</th><th>Chords</th></tr>
+    </thead>
+    {% for song, option_list in song_and_key_option_list %}
+        <tr class="song" id="{{song.ccli}}-row">
+            <td>{{song.title}}</td> 
+            <td>{{song.authors.all|join:', '}}</td> 
+            <td>{{song.ccli}}</td> 
+            {% if song.chords %}
+                <td><span class="glyphicon glyphicon-ok"></span></td>
+            {% else %}
+                <td><span class="glyphicon glyphicon-remove"></span></td>
+            {% endif %}
+        </tr>
+        
+        <tr class="details">
+        <td colspan=4>
+
+            <a href="http://www.youtube.com/results?search_query={{song.title}}+{{song.authors.all.0}}" target="_blank" title="Search Youtube"><img src="{% static 'songs/youtube-small.png'%}" width="45"/></a>
+            <a href="http://www.ultimate-guitar.com/search.php?search_type=title&value={{song.title}}" target="_blank" title="Search Ultimate Guitar"><img src="{% static 'songs/ultimateguitar-small.png'%}" /></a>
+            <a href="http://worship-songs-resources.worshiptogether.com/search?w={{song.title}} {{song.authors.all.0}}" target="_blank" title="Search WorshipTogether"><img src="{% static 'songs/worshiptogether-small.png'%}" /></a>
+
+            <br>
+            <br>
+            <p><b>Copyright</b>: {% if song.publication_year != 1111 %}
+                        {{song.publication_year}} 
+                    {% endif %}    
+                        {{song.publisher.all|join:', '}}</p>
+            <p><b>Original Key:</b> {{song.original_key}}</p>
+            <p><b>Key Line:</b> {{song.key_line}}</p>
+            
+            {% if song.chords %}
+            <div class="row">
+                <div class="col-md-1">
+                    <p>Transpose</p>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control transpose-value" id="{{song.ccli}}-transpose">
+                        {{option_list|safe}}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                <button type="button" data-toggle="modal" data-target="#myModal" class="btn btn-default modal-chord-preview" name="{{song.ccli}}" id="{{song.ccli}}-modal">Preview Chords</button>
+                <button type="button" class="btn btn-default download-single" name="{{song.ccli}}">Download Chords</button>
+                <button type="button" class="btn btn-default download-lyrics" name="{{song.ccli}}">Download Lyrics</button>
+                </div>
+
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-md-2">
+                    <p>No Chords Available</p>
+                </div>
+            </div>
+            {% endif %}
+            <br>
+            <div class="row">
+                <div class="col-md-2">
+                <input type="button" class="form-control add-button" name="{{song.ccli}}" id="{{song.ccli}}-add" value="Add to Set List"/>
+                </div>
+                <div class="col-md-2">
+                <input type="button" class="form-control remove-button" name="{{song.ccli}}" id="{{song.ccli}}-remove" value="Remove from Set List" disabled="true"/>
+                </div>
+            </div>
+        </td> 
+        </tr>
+        {% endfor %}
+    </table>
+
+
+{% else %}
+    <p>No songs matched your search criteria.</p>
+{% endif %}
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Chord Preview</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+{% endblock%}

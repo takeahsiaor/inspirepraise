@@ -1,0 +1,600 @@
+
+html {
+overflow-y:scroll;
+
+}
+
+#header {
+    width:100%;
+    height:66px;
+    position:relative;
+    background-image: url('header1.png');
+    
+    border-bottom:1px black solid;
+}
+
+#subheader{
+    background-image:url('subheader1.png');
+    height:300px;
+    width:100%;
+    border-bottom:1px black solid;
+}
+
+#login_header{
+    float:right;
+    text-align:right;
+    line-height:100%;
+}
+
+#logo {
+    width:250px;
+    float:left;
+    margin-left:-20px;
+    margin-right: 40px;
+}
+
+
+.menu-container{
+    width:950px;
+    height:100%;
+    margin:0 auto;
+    
+
+}
+/* this is to keep everything to a given width. overflow hidden makes the height standardized */
+.container{
+    width:950px;
+    height:100%;
+    margin:0 auto;
+    overflow:hidden;
+/*     border-left: 1px solid gray;
+    border-right: 1px solid black; */
+}
+
+
+body{
+/* background-image: url('hut.jpg'); */
+
+color:black;
+font: 13px/1.5 century gothic ;
+}
+
+h1{
+    font-size: 2em;
+    -webkit-margin-before: 0.67em;
+    -webkit-margin-after: 0.67em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+    font-weight:normal;
+}
+
+h2{
+    font-weight:normal;
+}
+
+h3{
+    font-weight:normal;
+}
+a{
+    color:#D4D4D4;
+}
+
+a:hover{
+    color:white;
+}
+
+ul.errorlist {
+    margin: 0;
+    padding: 0;
+}
+.errorlist li {
+    margin: 1em 0;
+    padding: .5em;
+    background: #d35959;
+    border: 1px solid #000;
+    color: #FFF;
+    /* display:block; */
+
+}
+
+/* #navmenu {
+    border-style:solid;
+    border-width: 0px 0px; 
+    height:66px;
+} */
+
+/* #navmenucontainer {
+    width:945px;
+
+    margin-right:auto;
+    margin-left:auto;
+} */
+
+.parent{
+    position:relative;
+    display:block;
+    width:130px;
+    float:left;
+    -webkit-transition: all .25s ease;
+    -moz-transition: all .25s ease;
+    -ms-transition: all .25s ease;
+    -o-transition: all .25s ease;
+    transition: all .25s ease;
+
+}
+
+
+
+.parent a{
+    color:#D4D4D4;
+    text-decoration:none;
+    line-height:66px;
+    height:66px;
+
+}
+
+
+.button{
+    float:left;
+    display:block;
+    text-align:center;
+    width:130px;
+
+    /* height:30px; */
+    /* background:rgba(192,192,192,0.8); */
+    /* border-bottom-color:rgba(192,192,192,0.8);   */
+
+}
+
+.parent:hover{
+    /* background:rgba(192,192,192,0.5); */ /* gray */
+    /* background:rgba(125,144,195,1); */ /* purpleish */
+    /* background:rgba(25,62,163,1); */ /* darkest blue */
+        background:rgba(47,85,186,1); /* subtle blue */
+    /* background-image:url(buttonpush.png); */
+}
+
+
+.sub{
+    visibility:visible!important;
+    position:absolute;
+    top:67px;
+    width:130px;
+    height:0px;
+    overflow:hidden;
+    
+    transition:height 0.4s ease-in-out;
+    -moz-transition:height 0.4s ease-in-out;
+    -webkit-transition:height 0.4s ease-in-out;
+    -o-transition:height 0.4s ease-in-out;
+    
+    
+}
+
+.parent:hover .sub{
+    height:200px;
+    text-align:center;
+    
+}
+
+
+
+.sub a{
+    color:#FFFFFF;
+    /* background:rgba(192,192,192,0.5); */
+    /* background:rgba(125,144,195,1); */
+    background:rgba(47,85,186,1); /* darkest blue */
+
+    display:block;
+    width:130px;
+    height:30px;
+    text-align:center;
+    color:#D4D4D4;
+    text-decoration:none;
+    line-height:30px;
+    border-top-left-radius:0px;
+    border-top-right-radius:0px;
+    -webkit-transition: all .25s ease;
+    -moz-transition: all .25s ease;
+    -ms-transition: all .25s ease;
+    -o-transition: all .25s ease;
+    transition: all .25s ease;
+}
+
+/*hovering over nested menu item */
+.sub a:hover{
+    border:1px black;
+    background:rgba(25,62,163,1);
+}
+
+.bottom {
+
+    border-bottom-left-radius:10px;
+    border-bottom-right-radius:10px;
+}
+
+
+
+.sh-left-box{
+    float:left;
+    color:white;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 36px;
+    font-weight:bold;
+    text-shadow: 1px 1px 3px black;
+    width:350px;
+    height:100%;
+    margin-top:10px;
+    margin-left:10px;
+}
+
+.sh-right-box{
+    float:left;
+    width:415px;
+    height:100%;
+    margin-left:30px;
+    background-image:url('biblesongs1.png');
+    background-size:420px;
+}
+
+/* .sh-image{
+    height:100%;
+    vertical-align:bottom;
+}
+ */
+.sh-image img{
+    width:100%;
+    vertical-align:bottom;
+    border:0;
+}
+
+.small{
+    font: 13px/1.5 century gothic ;
+    font-weight:normal;
+}
+
+.signup {
+    width:167px;
+    height:45px;
+    margin-top:20px;
+    margin-left:auto;
+    margin-right:auto;
+    background-image:url(signup_up.png);
+}
+
+.signup:hover{
+    background-image:url(signup_h.png);
+}
+
+/* .signup:active{
+    background-image:url(signup_p.png);
+} */
+    
+
+
+#container{
+
+    margin-left:auto;
+    margin-right:auto;
+/*     -moz-box-shadow: 10px 10px 5px rgba(0,0,0,0.6);
+    -webkit-box-shadow: 10px 10px 5px rgba(0,0,0,0.6);
+    box-shadow: 10px 10px 5px rgba(0,0,0,0.6); */
+    border-style:solid;
+    background-color:rgba(232,232,232,1);
+/*     border-top-left-radius:0px;
+    border-top-right-radius:10px;
+    border-bottom-right-radius:10px;
+    border-bottom-left-radius:10px; */
+    border-width: 1px 1px;
+    border-color:rgba(0,0,0,0.3);
+}
+
+#content{
+    /* width:900px; */
+    /* height:auto; */
+    min-height:700px;
+    padding: 1px 10px 10px 10px;
+    margin-left:auto;
+    margin-right:auto;
+
+}
+
+#content a{
+    color:blue;
+}
+
+#content a:hover{
+    color:rgba(142,142,247,1);
+}
+
+/* adds styling for required fields */
+.required  th label{
+    text-decoration:underline;
+}
+
+.logged_in a{
+    color:blue;
+}
+
+.logged_in a:hover{
+    color:rgba(142,142,247,1);
+}
+
+
+/* this is for left middle and right content */
+.left-content{
+    
+    float:left;
+    width:290px;
+    height:200px;
+    margin-right:5px;
+    background:white;
+    padding:0px 10px 40px 10px;
+    /* background:rgba(196,211,250,0.5); */
+}
+
+.left-content p h2{
+    padding: 10px;
+}
+
+.middle-content{
+    float:left;
+    width:290px;
+    height:200px;
+    margin-right:5px;
+    background:white;
+    padding:0px 10px 40px 10px;
+    /* background-color:rgba(195,238,153,0.3); */
+}
+
+.middle-content p h2{
+    padding: 10px;
+}
+
+.right-content{
+    float:left;
+    width:290px;
+    height:200px;
+    margin-right:5px;
+    background:white;
+    padding:0px 10px 40px 10px;
+    /* background-color:rgba(253,187,176,0.3); */
+}
+
+.right-content p h2{
+    padding: 10px;
+}
+
+/* this is for left and right content */
+.l-content{
+    float:left;
+/*     height:400px; */
+    /* width:550px; */
+    width:250px;
+    padding-bottom: 20px;
+}
+
+.r-content{
+    margin-left:30px;
+    float:left;
+/*     height:400px; */
+    /* width:300px; */
+    width:640px;
+    padding-bottom: 20px;
+}
+
+/* this is for two content area with the left being larger then the right */
+.large-l-content{
+    float:left;
+/*     height:400px; */
+    width:550px;
+
+    padding-bottom: 20px;
+}
+
+.small-r-content{
+    margin-left:30px;
+    float:left;
+/*     height:400px; */
+    width:300px;
+    /* width:550px; */
+    padding-bottom: 20px;
+}
+
+.shadow-content{
+    width:500px;
+}
+
+.info-header{
+    width:100px;
+    float:left;
+/*     text-decoration:underline; */
+}
+
+.info{
+    float:left;
+    width:450px;
+}
+
+label{
+    font-weight:normal;
+    /* text-decoration:underline; */
+}
+
+th{
+    vertical-align:top;
+    text-align:left;
+    font-weight:normal;
+}
+
+option:hover{
+   background-color:gray;
+}
+
+
+/* handling song search results */
+
+
+/* this specifically handles the table generated in the ccli popup window */
+.poptable {
+    font: 13px/1.5 century gothic;
+}
+
+#songlisting thead{
+    background-color:rgba(192,192,192,0.5);
+}
+
+#songlisting thead th{
+    text-align:left;
+}
+
+#songlisting tr td{
+    border-bottom: 1px solid rgba(192,192,192,0.8);
+    cursor:pointer;
+}
+
+
+#songlisting tr.song{
+    -webkit-transition: all .25s ease;
+    -moz-transition: all .25s ease;
+    -ms-transition: all .25s ease;
+    -o-transition: all .25s ease;
+    transition: all .25s ease;
+}
+
+#songlisting tr.song:hover {
+    background-color:rgba(192,192,192,0.4);
+}
+
+#songlisting .details td{
+    border-bottom: 1px solid rgba(0,0,0,0.3);
+}
+
+#songlisting div.arrow { 
+    background:transparent url(arrows.png) no-repeat scroll 0px -16px; 
+    width:16px; 
+    height:16px; 
+    display:block;
+}
+
+#songlisting div.up { 
+    background-position:0px 0px;
+}
+
+#verse_search_results {
+    clear:both;
+}
+
+
+.details div{
+    /* height:200px; */
+    cursor:default;
+    
+}
+
+#id_query{
+    width:300px;
+}
+
+.search_verse_bad_alert {
+    margin: 1em 0;
+    padding: .5em;
+    background: #d35959;
+    border: 1px solid #000;
+    color: #FFF;
+    float: left;
+    display:none;
+    margin-left:300px;
+    margin-top:-53px;
+}
+.search_song_bad_alert {
+    margin: 1em 0;
+    padding: .5em;
+    background: #d35959;
+    border: 1px solid #000;
+    color: #FFF;
+    float: left;
+    display:none;
+    margin-left:370px;
+    margin-top:-53px;
+}
+.tag_bad_alert {
+    margin: 1em 0;
+    padding: .5em;
+    background: #d35959;
+    border: 1px solid #000;
+    color: #FFF;
+    float: left;
+    margin-left:282px;
+    margin-top:-53px;
+    display:none;
+
+}
+.good_alert {
+    margin: 1em 0;
+    padding: .5em;
+    background: #8294cd;
+    border: 1px solid #000;
+    color: #FFF;
+    display: none;
+    float: left;
+    margin-left:282px;
+    margin-top:-53px;
+    /* position:absolute; */
+/*     left:440px;
+    top: 120px; */
+}
+
+input[type=text], input[type=password]{
+    border: 1px inset;
+}
+
+/* for verse tag selection and removal */
+#verse_results{
+    width:250px;
+}
+
+.verse{
+    font-size:13px;
+    width:150px;
+/*     vertical-align:bottom; */
+}
+.closer{
+    width:10px;
+
+}
+
+.verse_close{
+    text-decoration:none;
+    width:50px;
+}
+
+#songlisting tr.song.tagged{
+    background-color:#90c570;
+}
+
+#songlisting tr.song.tagged input{
+    
+}
+
+.endless_page_link{
+    text-decoration:none;
+}
+
+/* for song search results in tag window */
+.song_results_content{
+    width:640px;
+}
+
+#footer{
+    border-style:solid;
+    border-width: 1px 0px;
+    padding: 5px 0px;
+}
+
+/* #footercontent{
+    width:900px;
+    margin-left:auto;
+    margin-right:auto;
+} */
+

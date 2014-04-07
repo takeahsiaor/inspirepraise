@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>InspirePraise {% block title %}{% endblock %}</title>
+    {% load staticfiles %}
+    <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
+    
+    <!-- <link href="{% static 'songs/style.css'%}" rel="stylesheet" type="text/css"> -->
+    <!-- <script src="{% static 'songs/jquery-1.10.2.min.js' %}"></script> -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="{% static 'songs/bootstrap/js/bootstrap.js' %}"></script>
+    <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
+    <style>
+    html {
+        overflow-y:scroll;
+    }
+    </style>
+    {% block headloaders %}{% endblock %}
+    
+</head>
+<body>
+
+<div class="container">
+
+    <nav class="navbar navbar-default" role="navigation">
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <a class="navbar-brand" href="{% url 'songs.views.home' %}">InspirePraise</a>
+        <ul class="nav navbar-nav">
+        
+            <li class="active"><a href="{% url 'songs.views.home' %}">Home</a></li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Search <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="{% url 'songs.views.search_verses' %}">By Verses</a></li>
+                    <li><a href="{% url 'songs.views.search_info' %}">By Song Info</a></li>
+                    <li><a href="{% url 'songs.views.search_songs_with_chords' %}">Songs with Chords</a></li>
+                </ul>
+            </li>
+            <li><a href="{% url 'songs.views.tag_verses' %}">Tag</a></li>
+            <li><a href="{% url 'songs.views.lookup' %}">Add Song</a></li>
+            <li><a href="{% url 'songs.views.setlist' %}">Set List <span class="badge">{{request.session.setlist|length}}</span></a></li>
+
+        </ul>
+        
+        <ul class="nav navbar-nav navbar-right">
+            {% if not user.is_authenticated %}
+            <li><a href="{% url 'songs.views.login_user' %}">Login</a></li>
+            <li><a href="{% url 'registration_register'%}">Register</a></li>
+            {% else %}
+            <li><p style="padding-top:15px; padding-right:10px;">Welcome {{user.username}}</p></li>
+            <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+
+
+{% if not user.is_authenticated %}
+
+        <div class="jumbotron">
+            <h1>
+            Simpler,<br>
+            Scripture-based,<br>
+            Song Selection
+            </h1>
+            <p>
+                Search through our database for songs <br>based on relevant verses. <br>
+                Signing up is easy!
+                
+                </a>
+            </p>
+            <p><a class="btn btn-primary btn-lg" role="button" href="{% url 'registration_register'%}">Sign up!</a></p>
+            
+        </div>
+{% endif %}
+
+{% block content %}
+{% endblock %}
+
+
+<footer class="footer">
+    <div class='container'>
+    {% block footer %}
+    <p>Copyright 2013 - InspirePraise</p>
+    {% endblock %}
+    </div>
+</footer>
+
+</body>
+</html>

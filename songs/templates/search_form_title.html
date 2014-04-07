@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block headloaders %}
+{% load staticfiles %}
+<!-- <script type="text/javascript" src="{% static 'songs/search_songs.js' %}"></script> -->
+<link href="{% static 'songs/spinner.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/bootstrap/js/typeahead.js' %}"></script>  
+<script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
+<script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
+<script type="text/javascript">  
+    $(document).ready(function(){
+        $('form').submit(function(){
+            $('.small_spin').attr('class', 'small_spinner');
+        });
+        Ladda.bind('button[type=submit]');
+    });
+</script>  
+{% endblock %}
+
+
+{% block content %}
+<h1>Search by Song Information</h1>
+
+<div id='alerts'>
+{% if form.errors %}
+    {% for error in form.query.errors %}
+        <div class="alert alert-danger">{{ error|escape }}</div>
+    {% endfor %}
+{% endif %}
+</div>
+
+
+<!-- implement pagination before activating this -->
+<p><a href="{% url 'songs.views.search_all' %}">Browse All Songs</a></p>
+
+<form class="form-horizontal" role="form"> <!-- action="" method="get" -->
+    <div class="form-group row">
+        <!-- {% csrf_token %} -->
+        
+        <div class="col-md-5">
+            <label class="sr-only" for="id_query">Enter Title, Authors, or Lyrics</label>
+            <input type="text" autocomplete="off" class="form-control" id="id_query" name="query" placeholder="Enter Title, Authors, or Lyrics">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">Search</button>
+        </div>
+
+    </div>
+    
+</form>
+    
+    
+<!-- <div id="song_search_results">
+</div> -->
+
+
+
+
+
+
+
+
+<!--     <form action="" method="get"> 
+
+        <input type="text" name="q" size="40">
+
+        <input type="submit" value="Search">
+    
+    </form> -->
+{% endblock %}

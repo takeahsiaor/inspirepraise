@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %} | MetaData{% endblock %}
+
+{% block content %}
+<h1>MetaData</h1>
+Welcome to the path at {{path}}: 
+<table>
+{% for k, v in values %}
+    <tr><td>{{k}}</td><td>{{v}}</td></tr>
+{% endfor %}
+
+</table>
+{% endblock %}
