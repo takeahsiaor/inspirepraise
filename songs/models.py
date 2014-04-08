@@ -86,6 +86,16 @@ class Ministry(models.Model):
     # members = models.ManyToManyField(User, blank=True)
     def __unicode__(self):
         return self.name
+
+class Invitation(models.Model):
+    #when admin sends invite, creates invitation for a given email/ministry combination
+    #when user logs in or creates account, once verified, will check against if invitation exists
+    date = models.DateTimeField(auto_now_add=True)
+    email = models.EmailField(verbose_name='e-mail')
+    ministry = models.ForeignKey(Ministry)
+    
+    class Meta:
+        unique_together = ('email', 'ministry')
         
 class Profile(models.Model):
     user = models.ForeignKey(User, unique = True)
@@ -99,6 +109,7 @@ class MinistryMembership(models.Model):
     ministry = models.ForeignKey(Ministry)
     join_date = models.DateField(auto_now_add=True)
     #when admin sends invite, creates membership, when email confirmed, makes active
+    #this doesn't work since if the invited doesn't have an account, no profile to create membership
     active = models.BooleanField(default=False) 
     admin = models.BooleanField(default=False) # this will allow multiple admins
     

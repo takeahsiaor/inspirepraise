@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
-# from songs.models import SetlistArchive
+from songs.models import Invitation
 from songs.models import Setlist, SetlistSong
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
@@ -947,13 +947,21 @@ def crawl_songselect(request):
         save_songs_from_dict(dict)
     return HttpResponseRedirect(reverse('songs.views.success'))
 
+@login_required    
+def accept_ministry_invitation(request):
+    """
+    Email link sends user here. Will send ministry code along with it
+    Will save ministry code in a session variable for later saving. Prompt for login or register
+    Once registered or logged in, will create the membership
+    """
+    stuff = request.GET.get('stuff')
+    print stuff
+    return HttpResponseRedirect(reverse('songs.views.success'))
+
 def send_ministry_invitation(to_emails, from_email, ministry):
+    ministry_code = ministry.id
     subject = "Invitation to " + ministry.name + " InspirePraise group"
     message = "You've been invited to join the %s InspirePraise group by %s. By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords and key transpositions!\nClick the following link to join: www.inspirepraise.com/join" % (ministry.name, from_email)
-    
-    # "You've been invited to join the " + ministry.name + " InspirePraise group by " + from_email + ".\
-        # By joining, you'll have access to setlists shared by other members of this ministry and access \
-        # to all the chords and key transpositions! Click the following link to join: www.inspirepraise.com/join"
     send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
 
     
