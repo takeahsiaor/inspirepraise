@@ -949,9 +949,11 @@ def crawl_songselect(request):
 
 def send_ministry_invitation(to_emails, from_email, ministry):
     subject = "Invitation to " + ministry.name + " InspirePraise group"
-    message = "You've been invited to join the " + ministry.name + " InspirePraise group by " + from_email + ".\
-        By joining, you'll have access to setlists shared by other members of this ministry and access \
-        to all the chords and key transpositions! Click the following link to join: www.inspirepraise.com/join"
+    message = "You've been invited to join the %s InspirePraise group by %s. By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords and key transpositions!\nClick the following link to join: www.inspirepraise.com/join" % (ministry.name, from_email)
+    
+    # "You've been invited to join the " + ministry.name + " InspirePraise group by " + from_email + ".\
+        # By joining, you'll have access to setlists shared by other members of this ministry and access \
+        # to all the chords and key transpositions! Click the following link to join: www.inspirepraise.com/join"
     send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
 
     
