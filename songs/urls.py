@@ -7,9 +7,10 @@ from songs import views, forms
 
 from registration.backends.default.views import RegistrationView
 from registration.forms import RegistrationFormUniqueEmail
-class RegistrationViewUniqueEmail(RegistrationView):
-    form_class = RegistrationFormUniqueEmail
+from songs.forms import RegistrationFormEmailAsUsername
 
+class RegistrationViewUniqueEmail(RegistrationView):
+    form_class = RegistrationFormEmailAsUsername
 
 urlpatterns = patterns('',
     # Examples:
@@ -40,13 +41,12 @@ urlpatterns = patterns('',
     url(r'^invite-to-ministry/(?P<ministry_code>\d{1,5})/$', views.invite_to_ministry),
     url(r'^accept-invitation/$', views.accept_ministry_invitation),
     url(r'^passreset/$', auth_views.password_reset, name='forgot_password1'),
-    # url(r'^accounts/login/$', 'django.contrib.auth.views.login'),
     url(r'^accounts/login/$', views.login_user),
-    url(r'^accounts/profile/edit/$', views.edit_profile),
+    # url(r'^accounts/profile/edit/$', views.edit_profile),
     url(r'^logout/$', views.logout_view),
     url(r'^forbidden/$', views.forbidden),
-    url(r'^accounts/register/$', RegistrationViewUniqueEmail.as_view(), name='registration_register'),
-    url(r'^accounts/', include('registration.backends.default.urls')),
+    # url(r'^accounts/register/$', RegistrationViewUniqueEmail.as_view(), name='registration_register'),
+    url(r'^accounts/', include('registration_email.backends.default.urls')),
     url(r'^tag-verses/$', views.tag_verses),
     url(r'^st/$', views.tag_verse_song_search),
     url(r'^songs-with-chords/$', views.search_songs_with_chords),

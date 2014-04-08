@@ -48,7 +48,7 @@
             <li><a href="{% url 'songs.views.login_user' %}">Login</a></li>
             <li><a href="{% url 'registration_register'%}">Register</a></li>
             {% else %}
-            <li><p style="padding-top:15px; padding-right:10px;">Welcome {{user.username}}</p></li>
+            <li><p style="padding-top:15px; padding-right:10px;">Welcome {{user.email}}</p></li>
             <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
             {% endif %}
         </ul>

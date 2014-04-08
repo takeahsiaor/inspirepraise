@@ -592,7 +592,7 @@ def retrieve_setlist(request, **kwargs):
     
 def login_on_activation(sender, user, request, **kwargs):
     """Logs in the user after activation"""
-    user.backend = 'django.contrib.auth.backends.ModelBackend'
+    user.backend = 'django.contrib.auth.backends.ModelBackend' 
     login(request, user)
     # profile = Profile.objects.get_or_create(user=user)
 # Registers the function with the django-registration user_activated signal
