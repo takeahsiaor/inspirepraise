@@ -24,7 +24,7 @@ from haystack.query import SearchQuerySet, RelatedSearchQuerySet
 from difflib import get_close_matches
 from songs.functions import parse_string_to_verses, test_parsable, force_int, check_song, transpose
 from songs.functions import get_song_info_from_link, save_songs_from_dict, link_song_to_verses
-from songs.functions import make_key_option_html, convert_setlist_to_string
+from songs.functions import make_key_option_html, convert_setlist_to_string, get_md5_hexdigest
 from bs4 import BeautifulSoup
 import urllib2, string, re, pickle, os, json
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -958,11 +958,15 @@ def accept_ministry_invitation(request):
     print stuff
     return HttpResponseRedirect(reverse('songs.views.success'))
 
-def send_ministry_invitation(to_emails, from_email, ministry):
+def send_ministry_invitation(emails_passwords, from_email, ministry):
     ministry_code = ministry.id
     subject = "Invitation to " + ministry.name + " InspirePraise group"
-    message = "You've been invited to join the %s InspirePraise group by %s. By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords and key transpositions!\nClick the following link to join: www.inspirepraise.com/join" % (ministry.name, from_email)
-    send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
+    for email_password in emails_passwords:
+        to_email = email_password[0]
+        password = email_password[1]
+        message = "You've been invited to join the %s InspirePraise group by %s. By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords and key transpositions!\nClick the following link to join: www.inspirepraise.com/join" % (ministry.name, from_email)
+        message += "\nYour email is %s and temporary password is %s." % (to_email, password)
+        send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
 
     
 @login_required
@@ -981,11 +985,17 @@ def invite_to_ministry(request, ministry_code):
         if form.is_valid():
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
-            emails = []
+            emails_passwords = []
             for email in email_list:
-                emails.append(email.strip())
+                #test if user already exists. if so, then just send invitation no need to create user.
+                username = get_md5_hexdigest(email)
+                password = username[:10]
+                new_user = User(username=username, email=email.strip(), is_active=False)
+                new_user.set_password(password)
+                new_user.save()
+                emails_passwords.append((email.strip(), password))
             sender = current_user.email
-            send_ministry_invitation(emails, sender, ministry)
+            # send_ministry_invitation(emails_passwords, sender, ministry)
             return HttpResponseRedirect(reverse('songs.views.success'))
     else:
         form = InviteForm()

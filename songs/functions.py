@@ -2,10 +2,17 @@ from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profi
 from difflib import get_close_matches
 import urllib2, string, re, pickle
 from bs4 import BeautifulSoup
-
+import hashlib
 # def chord_lines_to_html(lines):
 
-
+def get_md5_hexdigest(email):
+    """
+    Returns an md5 hash for a given email.
+    The length is 30 so that it fits into Django's ``User.username`` field.
+    """
+    if isinstance(email, str):  # for py3
+        email = email.encode('utf-8')
+    return hashlib.md5(email).hexdigest()[0:30]
 
 def convert_setlist_to_string(setlist):
     """
