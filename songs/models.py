@@ -103,6 +103,9 @@ class Profile(models.Model):
     num_song_tags = models.IntegerField(default=0)
     num_verse_tags = models.IntegerField(default=0)
     
+    def __unicode__(self):
+        return self.user.email
+    
 class MinistryMembership(models.Model):
     # to future proof in case i want profile-ministry specific data like instrument played
     member = models.ForeignKey(Profile)

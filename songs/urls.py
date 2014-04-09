@@ -36,7 +36,6 @@ urlpatterns = patterns('',
     url(r'success/$', views.success), #no caret means will match all ending in success
     url(r'^accounts/profile/$', views.profile),
     url(r'^ministry/(?P<ministry_code>\d{1,5})/$', views.ministry_profile),
-    url(r'^ministry/(?P<ministry_code>\d{1,5})/leave_confirm/$', views.leave_ministry_confirm),
     url(r'^ministry/(?P<ministry_code>\d{1,5})/leave/$', views.leave_ministry),
     url(r'^invite-to-ministry/(?P<ministry_code>\d{1,5})/$', views.invite_to_ministry),
     url(r'^accept-invitation/$', views.accept_ministry_invitation),

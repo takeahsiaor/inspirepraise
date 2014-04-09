@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
 from django.contrib.auth.models import User
+from django.contrib import messages
 from django.db.models import Sum, Q
 from django.contrib.auth import login, authenticate, logout #these are functions
 from django.contrib.auth import views #these are views
@@ -950,31 +951,43 @@ def crawl_songselect(request):
         song_dict = get_song_info_from_link(url)
         song_information.append(song_dict)
 
-
     #saves song information in database
     for dict in song_information:
         save_songs_from_dict(dict)
     return HttpResponseRedirect(reverse('songs.views.success'))
-
+    
+@login_required
+def accept_ministry_complete(request):
+   pass
    
 def accept_ministry_invitation(request):
     """
     Email link sends user here. 
     """
-    #still must check for invitation then delete invitation
     #potentially send to congratulations screen or welcome screen, rather than profile
-    username = request.GET.get('code')
-    ministry_id = request.GET.get('min')
-    ministry = Ministry.objects.get(id=ministry_id)
-    user = User.objects.get(username=username)
-    user.is_active = True
-    user.save()
-    profile, created = Profile.objects.get_or_create(user=user)
-    profile.save()
-    membership = MinistryMembership(member=profile, ministry=ministry)
-    membership.save()
-    return HttpResponseRedirect(reverse('songs.views.profile'))
-
+    try: #verifies correct code and ministry stuff and makes sure user exists
+        username = request.GET.get('code')
+        ministry_id = request.GET.get('min')
+        ministry = Ministry.objects.get(id=ministry_id)
+        user = User.objects.get(username=username)
+        invitation = Invitation.objects.filter(email=user.email, ministry=ministry)
+    except:#if not, then just send to forbidden
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    if invitation: #if user and ministry exists, check if there is an invitation present for that person
+        user.is_active = True
+        user.save()
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.save()
+        membership = MinistryMembership(member=profile, ministry=ministry, active=True)
+        membership.save()
+        invitation.delete()
+        msg = "Congrats! You're now a part of the %s ministry group! Jump up and down!" % ministry.name
+        messages.success(request, msg)
+        messages.success(request, "Remember to change your password when you get a chance!")
+        return HttpResponseRedirect(reverse('songs.views.profile'))
+    else:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+        
 def send_ministry_invitation(recipient, password, from_email, ministry):
     user = recipient
     subject = "Invitation to " + ministry.name + " InspirePraise group"
@@ -987,6 +1000,7 @@ def send_ministry_invitation(recipient, password, from_email, ministry):
     
 @login_required
 def invite_to_ministry(request, ministry_code):
+    #PROTECT AGAINST INVITING EXISTING MEMBERS
     ministry = Ministry.objects.get(id=ministry_code)
     members = Profile.objects.filter(ministries=ministry) #members is queryset of profile objects that are part of ministry
     current_user = User.objects.get(id=request.user.id)
@@ -1001,30 +1015,33 @@ def invite_to_ministry(request, ministry_code):
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
             # emails_passwords = []
+            msg = 'Invitations have been sent to the following addresses: '
             for email in email_list:
-                #test if user already exists. if so, then just send invitation no need to create user.
                 email = email.strip()
+                #test if user already exists. if so, then just send invitation no need to create user.
                 try:
                     user = User.objects.get(email=email)
-                    # emails_passwords.append((email,''))
                     password = ''
                 except:
+                    #create new user if none exists
                     username = get_md5_hexdigest(email)
                     password = username[:10]
                     user = User(username=username, email=email, is_active=False)
                     user.set_password(password)
                     user.save()
-                    # emails_passwords.append((email, password))
-                # invite = Invitation(email=email, ministry=ministry)
-                # invite.save()
+                #create invitation
+                invite = Invitation(email=email, ministry=ministry)
+                invite.save()
                 sender = current_user.email
+                #send email
                 send_ministry_invitation(user, password, sender, ministry)
-            return HttpResponseRedirect(reverse('songs.views.success'))
+                msg += email +', '
+            msg = msg[:-2]
+            messages.success(request, msg)
+            return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = InviteForm()
     return render(request, 'invite_to_ministry.html', {'form':form,'ministry':ministry})
-    
-
     
 @login_required
 def ministry_profile(request, ministry_code):
@@ -1040,13 +1057,35 @@ def ministry_profile(request, ministry_code):
     return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'members':members})
 
 @login_required
-def leave_ministry_confirm(request, ministry_code):
-    ministry = Ministry.objects.get(id=ministry_code)
-    return render(request, 'leave_ministry_confirm.html', {'ministry':ministry})
-
-@login_required
 def leave_ministry(request, ministry_code):
-    pass
+    """
+    Accessed via AJAX. Will be sent get parameters ministry_id
+    Handles deletion of membership of current user in ministry
+    If last member of ministry, delete ministry as well.
+    If not the last member and has admin, transfer admin rights
+    """
+    #get number of members in ministry
+    ministry = Ministry.objects.get(id=ministry_code)
+    number_of_members = MinistryMembership.objects.filter(ministry=ministry).count()
+    print number_of_members
+    user = User.objects.get(id=request.user.id)
+    profile = Profile.objects.get(user=user)
+    membership = MinistryMembership.objects.get(member=profile, ministry=ministry)
+    admin = membership.admin
+    membership.delete()
+    messages.success(request, "You've successfully left the "+ministry.name+" ministry!")
+    if number_of_members == 1: #you're the last one, 
+        print 'deleted ministry here!'
+        ministry.delete()
+        messages.success(request, "Since you were the last member, the ministry was deleted. Cleanin' house baby!")
+    elif admin: #if more than 1 member and you are admin, transfer rights
+        print 'transfer admin rights'
+        earliest_member = MinistryMembership.objects.filter(ministry=ministry).order_by('join_date')[0]
+        earliest_member.admin = True
+        earliest_member.save()
+        messages.success(request, "Since you were an admin, your rights were transferred to another member.")
+    
+    return HttpResponseRedirect(reverse('songs.views.profile'))
 
 @login_required
 def profile(request):
@@ -1066,28 +1105,13 @@ def edit_profile(request):
             user.first_name = request.POST.get('first_name')
             user.last_name = request.POST.get('last_name')
             user.save()
-
-            #could be improved: will try to add ministry based on code
-            #if code is invalid, reload form and page with custom error message just passed as context
-            #not actually error associated with form i.e. form.errors but just context variable
-            try:
-                ministry = Ministry.objects.get(id=request.POST.get('ministry_code'))
-                profile.ministries.add(ministry)
-            except:
-                form = ProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name})
-                #if ministry code is entered but invalid, throw error
-                if request.POST.get('ministry_code'):
-                    return render(request, 'edit_form.html', {'form':form, 'title':'Edit Profile', 'header1':'Edit Profile',
-                        'profile':True, 'profile': profile, 'error':'Invalid Ministry Code',})
-                #if no ministry code, just redisplay
-                else:
-                    return HttpResponseRedirect(reverse('songs.views.edit_profile'))
+            msg = "Profile update successful!"
+            messages.success(request, msg)
             #should this direct back to the edit screen or profile or success page?
-            return HttpResponseRedirect(reverse('songs.views.edit_profile'))
+            return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = ProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name})
-    return render(request, 'edit_form.html', {'form':form, 'title':'Edit Profile', 'header1':'Edit Profile',
-        'profile':True, 'profile': profile})
+    return render(request, 'edit_profile.html', {'form':form})
 
 def contact(request):
     if request.method =='POST':
@@ -1202,6 +1226,8 @@ def add_ministry(request):
             profile = Profile.objects.get(user=user)
             membership = MinistryMembership(member=profile, ministry=ministry, active=True, admin=True)
             membership.save()
+            msg = "%s ministry successfully created! You are the only current admin!" % ministry.name
+            messages.success(request, msg)
             return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = MinistryForm()

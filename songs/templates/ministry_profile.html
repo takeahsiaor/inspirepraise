@@ -1,32 +1,75 @@
 {% extends "base.html" %}
 
+{% load staticfiles %}
+{% block headloaders %}
+<script src="{% static 'songs/ministry.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 <h1>{{ministry.name}}</h1>
 <h4>{{ministry.address}} <br> {{ministry.city}}, {{ministry.state_province}} {{ministry.country}} <br>
-Ministry Code: {{ministry.id}}
 </h4>
-
+<div class="row">
+    <div class="col-md-12">
 {% if membership.admin %}
-<a href="{% url 'songs.views.invite_to_ministry' ministry.id %}">Invite to join!</a><br>
+        <a class="btn btn-success" href="{% url 'songs.views.invite_to_ministry' ministry.id %}">
+            <span class="glyphicon glyphicon-envelope"></span> Invite to join!</a>
+        <a class="btn btn-primary" href="#"><span class="glyphicon glyphicon-cog"></span> Properties</a>
 {% endif %}
+        
+        <button class="btn btn-danger" data-toggle="modal" data-target="#leave-ministry-confirm"
+            name="{{ministry.id}}">Leave Ministry</button>
+{% if membership.admin %}
+        <button class="btn btn-danger pull-right">Delete Ministry</button>
+{% endif %}
+    </div>
+</div>
 
-<a href="{% url 'songs.views.leave_ministry_confirm' ministry.id %}">Leave Ministry</a>
 <br><br>
 <div>
     Members
     <ul>
         {% for member in members %}
             {% if member.user.first_name and member.user.last_name %}
-            <li>{{member.user}} - {{member.user.first_name}} {{member.user.last_name}}</li>
+            <li>{{member.user.first_name}} {{member.user.last_name}} - {{member.user.email}}</li>
             {% else %}
-            <li>{{member.user}} - {{member.user.email}}</li>
+            <li>{{member.user.email}}</li>
             {% endif %}
         {% endfor %}
     </ul>
 </div>
 
 <p>
-
 Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 </p>
+
+<div class="modal fade" id="leave-ministry-confirm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Confirmation Required...</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="alert alert-danger">
+            Are you sure you want to leave this ministry?<br>
+            <ul>
+            {% if members|length_is:'1' %}
+                <li>Since you are the only member, if you leave, the ministry will be deleted.</li>      
+            {% else %}
+                {% if membership.admin %}
+                <li>If you are the only admin, admin rights will be transferred to the next oldest member of the ministry.</li>
+                {% endif %}
+                <li>You'll need to be invited again to rejoin and will no longer have access to any future setlists sent by this ministry. </li>       
+            {% endif %}
+            </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+            <a class="btn btn-danger leave-ministry" href="/ministry/{{ministry.id}}/leave/" name="{{ministry.id}}">Leave!</a>
+            <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}

@@ -3,38 +3,49 @@
 {% block content %}
 <h1>Welcome {{user.email}}</h1>
 
-
+{% if messages %}
+<div class="alert alert-success">
+{% for message in messages %}
+    {% if forloop.last %}
+        {{ message }}
+    {% else %}
+        {{ message }} </br>
+    {% endif %}
+{% endfor %}
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-md-12">
+        <a class="btn btn-default" href="{% url 'songs.views.edit_profile' %}">Edit Profile</a>
+        <a class="btn btn-default" href="{% url 'auth_password_change' %}">Change Password</a>
+        <a class="btn btn-default" href="{% url 'songs.views.add_ministry' %}">Create New Ministry</a>
+    <hr>
+    </div>
+</div>
 <div class='row'>
     <div class="col-md-4">
         <h2>Basic Information</h2>
         <p>
-
             First Name: {{user.first_name}} <br>
             Last Name: {{user.last_name}} <br>
             Email: {{user.email}} <br>
+        </p>
             
         {% if profile.ministries.all %}
-            Ministry:
+        <h2>Ministries</h2>
             {% for ministry in profile.ministries.all %}
-                {% if forloop.last %}
-                    <a href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a>        
-                {% else %}
-                    <a href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a> |
-                {% endif %}
+                <a class="btn btn-default" style="margin-bottom:5px" href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a>  
             {% endfor %}
-            <br>
         {% endif %}
 
-        <a href="{% url 'songs.views.edit_profile' %}">Edit Info</a> <br>
-        <a href="{% url 'songs.views.add_ministry' %}">Create New Ministry</a>
-        </p>
     </div>
     <div class="col-md-8">
         <h2>Profile</h2>
         <p>
         Number of Songs tagged: {{profile.num_song_tags}}<br>
         Number of Verses tagged: {{profile.num_verse_tags}}<br>
-        <br>
+        </p>
+    <p class="alert alert-info">
     Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
     </p>
     </div>

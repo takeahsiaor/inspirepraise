@@ -10,6 +10,10 @@ from captcha.fields import CaptchaField
 from registration.forms import RegistrationForm, RegistrationFormUniqueEmail
 from songs.functions import test_parsable
 
+
+# class PasswordChangeForm(forms.Form):
+    # original_password = 
+
 class RegistrationFormEmailAsUsername(RegistrationFormUniqueEmail):
     def __init__(self, *args, **kwargs):
         super(RegistrationFormUniqueEmail, self).__init__(*args, **kwargs)
