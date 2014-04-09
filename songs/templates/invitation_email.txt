@@ -1,0 +1,17 @@
+Congrats!
+
+You've been invited to join the {{ministry.name}} InspirePraise group by {{from_email}}!
+
+By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords 
+and key transpositions!
+
+Click the following link within 3 days to join: 
+www.inspirepraise.com/accept-invitation/?code={{user.username}}&min={{ministry.id}}
+
+{% if password %}
+Your credentials are:
+Email: {{user.email}}
+Temporary Password: {{password}}
+{%endif %}
+Thanks!
+The InspirePraise Team

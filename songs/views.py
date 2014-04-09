@@ -1,6 +1,7 @@
 # Create your views here.
 # ooga booga
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
@@ -588,7 +589,15 @@ def retrieve_setlist(request, **kwargs):
             request.session['setlist'] = []
         return 
     
-
+# def make_user_active(request, **kwargs):
+    # """
+    # For first time logging in, for the case of invitation, make user active
+    # """
+    # user = User.objects.get(id=request.user.id)
+    # if not user.is_active:
+        # user.is_active = True
+        # user.save()
+    # return
     
 def login_on_activation(sender, user, request, **kwargs):
     """Logs in the user after activation"""
@@ -599,7 +608,7 @@ def login_on_activation(sender, user, request, **kwargs):
 user_activated.connect(login_on_activation)
 # after the logged in signal is sent, will call retreive_setlist
 user_logged_in.connect(retrieve_setlist)
-
+# user_logged_in.connect(make_user_active)
 
 #login url comes here. checks for remember me option then sends off to 
 #default django login view
@@ -947,26 +956,33 @@ def crawl_songselect(request):
         save_songs_from_dict(dict)
     return HttpResponseRedirect(reverse('songs.views.success'))
 
-@login_required    
+   
 def accept_ministry_invitation(request):
     """
-    Email link sends user here. Will send ministry code along with it
-    Will save ministry code in a session variable for later saving. Prompt for login or register
-    Once registered or logged in, will create the membership
+    Email link sends user here. 
     """
-    stuff = request.GET.get('stuff')
-    print stuff
-    return HttpResponseRedirect(reverse('songs.views.success'))
+    #still must check for invitation then delete invitation
+    #potentially send to congratulations screen or welcome screen, rather than profile
+    username = request.GET.get('code')
+    ministry_id = request.GET.get('min')
+    ministry = Ministry.objects.get(id=ministry_id)
+    user = User.objects.get(username=username)
+    user.is_active = True
+    user.save()
+    profile, created = Profile.objects.get_or_create(user=user)
+    profile.save()
+    membership = MinistryMembership(member=profile, ministry=ministry)
+    membership.save()
+    return HttpResponseRedirect(reverse('songs.views.profile'))
 
-def send_ministry_invitation(emails_passwords, from_email, ministry):
-    ministry_code = ministry.id
+def send_ministry_invitation(recipient, password, from_email, ministry):
+    user = recipient
     subject = "Invitation to " + ministry.name + " InspirePraise group"
-    for email_password in emails_passwords:
-        to_email = email_password[0]
-        password = email_password[1]
-        message = "You've been invited to join the %s InspirePraise group by %s. By joining, you'll have access to setlists shared by other members of this ministry and access to all the chords and key transpositions!\nClick the following link to join: www.inspirepraise.com/join" % (ministry.name, from_email)
-        message += "\nYour email is %s and temporary password is %s." % (to_email, password)
-        send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
+    to_email = user.email
+    context = {'ministry':ministry, 'user':user, 'password':password, 'from_email':from_email}
+    message = render_to_string('invitation_email.txt', context)
+    
+    send_mail(subject, message, 'rhsiao2@gmail.com', (to_email,))
 
     
 @login_required
@@ -979,23 +995,30 @@ def invite_to_ministry(request, ministry_code):
         membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))    
-    
     if request.method == "POST":
         form = InviteForm(request.POST)
         if form.is_valid():
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
-            emails_passwords = []
+            # emails_passwords = []
             for email in email_list:
                 #test if user already exists. if so, then just send invitation no need to create user.
-                username = get_md5_hexdigest(email)
-                password = username[:10]
-                new_user = User(username=username, email=email.strip(), is_active=False)
-                new_user.set_password(password)
-                new_user.save()
-                emails_passwords.append((email.strip(), password))
-            sender = current_user.email
-            # send_ministry_invitation(emails_passwords, sender, ministry)
+                email = email.strip()
+                try:
+                    user = User.objects.get(email=email)
+                    # emails_passwords.append((email,''))
+                    password = ''
+                except:
+                    username = get_md5_hexdigest(email)
+                    password = username[:10]
+                    user = User(username=username, email=email, is_active=False)
+                    user.set_password(password)
+                    user.save()
+                    # emails_passwords.append((email, password))
+                # invite = Invitation(email=email, ministry=ministry)
+                # invite.save()
+                sender = current_user.email
+                send_ministry_invitation(user, password, sender, ministry)
             return HttpResponseRedirect(reverse('songs.views.success'))
     else:
         form = InviteForm()
