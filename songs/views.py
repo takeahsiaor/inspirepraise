@@ -658,7 +658,8 @@ def forbidden(request):
 
 def home(request):
     #this will update session variable in case of someone sending setlist while you are logged in
-    display_push_setlist(request) 
+    if request.user.is_authenticated():
+        display_push_setlist(request) 
     return render(request, 'home.html')
     
 
