@@ -956,9 +956,11 @@ def crawl_songselect(request):
         save_songs_from_dict(dict)
     return HttpResponseRedirect(reverse('songs.views.success'))
     
+    
 @login_required
 def accept_ministry_complete(request):
    pass
+    
    
 def accept_ministry_invitation(request):
     """
@@ -995,7 +997,7 @@ def send_ministry_invitation(recipient, password, from_email, ministry):
     context = {'ministry':ministry, 'user':user, 'password':password, 'from_email':from_email}
     message = render_to_string('invitation_email.txt', context)
     
-    send_mail(subject, message, 'rhsiao2@gmail.com', (to_email,))
+    send_mail(subject, message, 'ron@onelivinghope.com', (to_email,))
 
     
 @login_required
@@ -1015,9 +1017,20 @@ def invite_to_ministry(request, ministry_code):
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
             # emails_passwords = []
-            msg = 'Invitations have been sent to the following addresses: '
+            sent = [] #gather emails that will be sent
+            already_invited = [] #gather emails that have already been invited
             for email in email_list:
                 email = email.strip()
+                #test for invitations already issued
+                try:
+                    invite = Invitation.objects.get(email=email, ministry=ministry)
+                except:
+                    invite = None
+                    
+                if invite:
+                    already_invited.append(email)
+                    continue
+                    
                 #test if user already exists. if so, then just send invitation no need to create user.
                 try:
                     user = User.objects.get(email=email)
@@ -1026,18 +1039,23 @@ def invite_to_ministry(request, ministry_code):
                     #create new user if none exists
                     username = get_md5_hexdigest(email)
                     password = username[:10]
-                    user = User(username=username, email=email, is_active=False)
-                    user.set_password(password)
-                    user.save()
+                    # user = User(username=username, email=email, is_active=False)
+                    # user.set_password(password)
+                    # user.save()
                 #create invitation
-                invite = Invitation(email=email, ministry=ministry)
-                invite.save()
+                # invite = Invitation(email=email, ministry=ministry)
+                # invite.save()
                 sender = current_user.email
                 #send email
-                send_ministry_invitation(user, password, sender, ministry)
-                msg += email +', '
-            msg = msg[:-2]
-            messages.success(request, msg)
+                # send_ministry_invitation(user, password, sender, ministry)
+                sent.append(email)
+            if sent:
+                msg_for_sent = 'Invitations have been sent to the following addresses: ' + ' ,'.join(sent)
+                messages.success(request, msg_for_sent)
+            if already_invited:
+                msg_for_already_invited = 'These people have already been invited: ' + ' ,'.join(already_invited)
+                messages.warning(request, msg_for_already_invited)            
+
             return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = InviteForm()

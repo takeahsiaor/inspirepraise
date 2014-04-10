@@ -4,22 +4,26 @@
 <h1>Welcome {{user.email}}</h1>
 
 {% if messages %}
-<div class="alert alert-success">
 {% for message in messages %}
-    {% if forloop.last %}
-        {{ message }}
-    {% else %}
-        {{ message }} </br>
+    {% if message.level < 26 %}
+    <div class="alert alert-success">
+        {{ message }} 
+    </div>
+    {% endif %}
+    {% if message.level > 26 %}
+    <div class="alert alert-warning">
+        {{ message }} 
+    </div>
     {% endif %}
 {% endfor %}
-</div>
+
 {% endif %}
 <div class="row">
+    <hr>
     <div class="col-md-12">
         <a class="btn btn-default" href="{% url 'songs.views.edit_profile' %}">Edit Profile</a>
         <a class="btn btn-default" href="{% url 'auth_password_change' %}">Change Password</a>
         <a class="btn btn-default" href="{% url 'songs.views.add_ministry' %}">Create New Ministry</a>
-    <hr>
     </div>
 </div>
 <div class='row'>
