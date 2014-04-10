@@ -1,5 +1,6 @@
 # Create your views here.
 # ooga booga
+import time
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
@@ -557,7 +558,21 @@ def chord_pdf(request):
         # c.save()
     c.save()
     return response
-
+    
+def display_push_setlist(request, **kwargs):
+    """
+    after login, look for setlists that are pushed.
+    """
+    print 'display_push_setlist'
+    user = request.user
+    profile, profile_created = Profile.objects.get_or_create(user=user)
+    pushed_setlist = Setlist.objects.filter(profile=profile, pushed=True)
+    if pushed_setlist: #perhaps later this can be tuple containing pushed setlists instead of boolean
+        request.session['pushed_setlist'] = pushed_setlist
+    else:
+        request.session['pushed_setlist'] = None
+    return
+    
 def retrieve_setlist(request, **kwargs):
     """
     after login, this will retrieve the text set list from the database
@@ -566,7 +581,7 @@ def retrieve_setlist(request, **kwargs):
     user = User.objects.get(id=request.user.id)
     #attempt to fix the logging in of created superuser and having no profile
     profile, profile_created = Profile.objects.get_or_create(user=user)
-    current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False)
+    current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False, pushed=False)
     print setlist_created
     request.session['current_setlist'] = current_setlist
     if setlist_created: #new setlist object therefore no setlist order
@@ -609,7 +624,7 @@ def login_on_activation(sender, user, request, **kwargs):
 user_activated.connect(login_on_activation)
 # after the logged in signal is sent, will call retreive_setlist
 user_logged_in.connect(retrieve_setlist)
-# user_logged_in.connect(make_user_active)
+user_logged_in.connect(display_push_setlist)
 
 #login url comes here. checks for remember me option then sends off to 
 #default django login view
@@ -618,7 +633,6 @@ def login_user(request, *args, **kwargs):
         if not request.POST.get('remember_me', None):
             request.session.set_expiry(0)
     return views.login(request, *args, **kwargs)
-
 
 
 @login_required
@@ -643,6 +657,8 @@ def forbidden(request):
     return render(request, '403.html')
 
 def home(request):
+    #this will update session variable in case of someone sending setlist while you are logged in
+    display_push_setlist(request) 
     return render(request, 'home.html')
     
 
@@ -976,16 +992,17 @@ def accept_ministry_invitation(request):
     except:#if not, then just send to forbidden
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
     if invitation: #if user and ministry exists, check if there is an invitation present for that person
-        user.is_active = True
-        user.save()
+        msg = "Congrats! You're now a part of the %s ministry group! Jump up and down!" % ministry.name
+        messages.success(request, msg)
+        if not user.is_active:#this means its user's first time logging in
+            messages.success(request, "Remember to change your password when you get a chance!")
+            user.is_active = True
+            user.save()
         profile, created = Profile.objects.get_or_create(user=user)
         profile.save()
         membership = MinistryMembership(member=profile, ministry=ministry, active=True)
         membership.save()
         invitation.delete()
-        msg = "Congrats! You're now a part of the %s ministry group! Jump up and down!" % ministry.name
-        messages.success(request, msg)
-        messages.success(request, "Remember to change your password when you get a chance!")
         return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
@@ -1492,7 +1509,101 @@ def get_chordpro_key(song):
     except:
         return ''
         
+def push_setlist_decision(request):
+    """
+    This is the view to handle acceptance and rejection of a pushed setlist
+    Accepts setlist id. If accept, archive current setlist and change pushed setlist to current
+    Then change pushed setlist push to false
+    If reject, delete pushed setlist and setlist songs
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    current_setlist = request.session['current_setlist']
+    
+    if 'accept' in request.GET:
+        print 'accept'
+        setlist_id = request.GET.get('accept')
+        #archive current setlist if there are songs in the setlist
+        if current_setlist.song_order:
+            current_setlist.archived = True
+            current_setlist.save()
+        else:#if no songs, then just delete it
+            current_setlist.delete()
+        accepted_setlist = Setlist.objects.get(id=setlist_id)
+        accepted_setlist.pushed = False
+        accepted_setlist.save()
+        request.session['current_setlist'] = accepted_setlist
+        #convert setlist to song-key tuple
+        #can factor this out of here and 'retrieve_setlist' later!
+        setlist_text = accepted_setlist.song_order
+        ccli_list = setlist_text.split(',')
+        temp_list = []
+        for tuple_str in ccli_list:
+            tuple = tuple_str.split('-')
+            ccli = tuple[0]
+            key = tuple[1]
+            temp_list.append((ccli,key))
+        request.session['setlist'] = temp_list
+        num_of_songs = str(len(temp_list))
 
+    elif 'reject' in request.GET:
+        print 'reject'
+        setlist_id = request.GET.get('reject')
+        rejected_setlist = Setlist.objects.get(id=setlist_id)
+        rejected_setlist_songs = SetlistSong.objects.filter(setlist=rejected_setlist)
+        rejected_setlist_songs.delete()
+        rejected_setlist.delete()
+        num_of_songs = ''
+
+    #checks if there are remaining pushed setlists and updates session variable accordingly
+    pushed_setlist = Setlist.objects.filter(profile=profile, pushed=True)
+    #if there are still pushed setlists, then response will be True to keep the window open
+    #if no pushed setlists, then response is false to destroy window
+    if pushed_setlist:
+        request.session['pushed_setlist'] = pushed_setlist
+        return HttpResponse(num_of_songs +'|True')
+    else:
+        request.session['pushed_setlist'] = None 
+        return HttpResponse(num_of_songs + '|False')
+
+        
+def push_setlist(request):
+    """
+    This is the view to handle sharing setlists with other members of ministry
+    Should be handled through AJAX i think then display success notification popup
+    For now, it immediately saves new setlist and new setlists songs even if it's not accepted.
+    Slower to push, faster to accept then. 
+    """
+    #on login signal, checks if there's a setlist that has push field as true, if so then give a message or
+    #new screen asking if they want to accept. session variable??
+    start = time.clock()
+    current_setlist = request.session['current_setlist']
+    user = request.user #CAN GET USER OBJECT DIRECTLY FROM REQUEST!!!
+    current_profile = Profile.objects.get(user=user)
+
+    #is it better to iterate through queryset or do initial load to list: list(queryset)
+    current_setlist_songs = SetlistSong.objects.filter(setlist=current_setlist)
+    
+    ministry_id = request.GET.get('ministry_id')
+    ministry = Ministry.objects.get(id=ministry_id)
+    memberships = MinistryMembership.objects.filter(ministry=ministry)
+    for membership in memberships:
+        profile = membership.member
+        #prevent setlist push to self
+        if profile == current_profile:
+            continue
+        #copy current_setlist
+        new_setlist = Setlist(profile=profile, notes=current_setlist.notes, created_by=ministry.name, 
+            song_order=current_setlist.song_order, pushed=True)
+        new_setlist.save()
+        #copy setlist_songs
+        for setlist_song in current_setlist_songs:
+            new_setlist_song = SetlistSong(setlist=new_setlist, song=setlist_song.song, notes=setlist_song.notes,
+                key=setlist_song.key, capo_key=setlist_song.capo_key, order=setlist_song.order)
+            new_setlist_song.save()
+    elapsed = time.clock() - start
+    print elapsed
+    return HttpResponseRedirect(reverse('songs.views.success'))
     
 def setlist(request):
     """
@@ -1530,52 +1641,24 @@ def setlist(request):
         #final packaging dependent on logged in or not, logged in will give setlist_song_option_list, not logged in song_option_list
         song_optionlist = []
         song_optionlist_setlistsong = zip(song_list, option_list, setlist_song_list)
+        #get profile and all ministries person is a part of
+        user = User.objects.get(id = request.user.id)
+        profile = Profile.objects.get(user=user)
+        ministries = MinistryMembership.objects.filter(member=profile)
+        
     else:        
         song_optionlist_setlistsong = []
         song_optionlist = zip(song_list, option_list)
+        
     #refactor this since i don't need both song_optionlist_setlistsong and song_optionlist    
     if request.user.is_authenticated():
         return render(request, 'setlist.html', {'title':'My Setlist', 
-            'song_optionlist_setlistsong':song_optionlist_setlistsong, 'current_setlist':current_setlist})
+            'song_optionlist_setlistsong':song_optionlist_setlistsong, 'current_setlist':current_setlist,
+            'ministries':ministries})
     else:
         return render(request, 'setlist.html', {'title':'My Setlist', 'song_optionlist':song_optionlist})
         
-    # songlist = []
-    # keylist = []
-    # for ccli_tuple in setlist:
-        # song = Song.objects.get(ccli=int(ccli_tuple[0]))
-        # songlist.append(song)
-        # # key = get_chordpro_key(song)
-        # key = ccli_tuple[1]
-        # keylist.append(key)
-    # #make option list for each song
-    # option_list = []
-    # for key in keylist:
-        # option_html = make_key_option_html(key)
-        # option_list.append(option_html)
-        
-    # song_and_key_option_list = zip(songlist, option_list)
-    #add getting of chordpro key to give to context
-    # return render(request, 'setlist.html', {'title':'My Setlist', 'song_and_key_option_list':song_and_key_option_list})
 
-# def modal_archive_setlist(request):
-    # id = request.GET.get('setlist_id')
-    # archive_setlist = SetlistArchive.objects.get(pk=int(id))
-    # setlist_song_key = archive_setlist.setlist.split(',')
-    # archive_setlist_songlist = [] #list of actual song objects
-    # archive_setlist_keylist = []
-    
-    # for sk in setlist_song_key:
-        # sk_list = sk.split('-')
-        # ccli = sk_list[0]
-        # key = sk_list[1]
-        # song = Song.objects.get(ccli=ccli)
-        # archive_setlist_songlist.append(song)
-        # archive_setlist_keylist.append(key)
-    
-    # setlist_song_key = zip(archive_setlist_songlist, archive_setlist_keylist)
-    # return render(request, 'format_as_option_list.html', {'archive_setlist':archive_setlist, 'setlist_song_key':setlist_song_key})
-    
 def update_setlist(request):
     """
     updates session variable to include or remove song from setlist
@@ -1670,7 +1753,6 @@ def update_setlist(request):
         print 'reorder'
         #common section
         csv_ccli = ccli[:-1] #sent ccli csv must be in form ccli-key,ccli-key
-        print csv_ccli
         ccli_list = csv_ccli.split(',')
         temp_list = []
         for ccli_and_key in ccli_list:
@@ -1678,7 +1760,6 @@ def update_setlist(request):
             ccli = ccli_and_key[0]
             key = ccli_and_key[1]
             temp_list.append((ccli,key))
-        print temp_list
         request.session['setlist'] = temp_list #saves new setlist
         
         #authenticated section
@@ -1749,7 +1830,6 @@ def update_setlist(request):
         #only available if logged in
         setlist_id = request.GET.get('delete')
         setlist_to_delete = Setlist.objects.get(pk=int(setlist_id))
-        print setlist_to_delete.notes
         print 'DELETED'
         setlist_to_delete.delete() #will this delete all related fields? setlistsongs? YES!
     

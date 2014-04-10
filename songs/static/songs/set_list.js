@@ -102,6 +102,23 @@ $(document).ready(function () {
         });
     });
     
+    $('.share-setlist').click(function(){
+        ministry_id = $('input[name=ministryOption]:checked').val();
+        $.pnotify({
+            title: 'Setlist Shared!',
+            text: "Cool! You've just shared this setlist with members of a ministry.",
+            type: 'success',
+            delay: 3000,
+            styling: "bootstrap",
+            closer_hover: true,
+            addclass: "stack-topright",
+            stack: stack_topright,
+        });
+        $.get('/push-setlist/', {'ministry_id':ministry_id}, function(response){
+        
+        });
+    });
+    
     $('.transpose-value').change(function() {
         var ccli_str = '';
         $(".sortable>li").each(function(){

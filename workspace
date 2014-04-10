@@ -29,6 +29,7 @@
             <File name="songs\static\songs\search_verses.js" />
             <File name="songs\static\songs\search_songs.js" />
             <File name="songs\static\songs\set_list.js" />
+            <File name="songs\static\songs\setlist_push.js" />
             <File name="songs\static\songs\tag_verses.js" />
         </Folder>
         <Folder name="Shadowbox">
@@ -45,6 +46,7 @@
             <File name="songs\templates\base_home.html" />
             <File name="songs\templates\contact_form.html" />
             <File name="songs\templates\contact_thanks.html" />
+            <File name="songs\templates\create_ministry_form.html" />
             <File name="songs\templates\edit_form.html" />
             <File name="songs\templates\form.html" />
             <File name="songs\templates\format_as_option_list.html" />

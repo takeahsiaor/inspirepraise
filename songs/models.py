@@ -125,6 +125,8 @@ class Setlist(models.Model):
     songs = models.ManyToManyField(Song, through="SetlistSong")
     #needs a way to keep order of songs
     song_order = models.TextField(default='', max_length=200)
+    #indicates whether the setlist was pushed from a ministry source
+    pushed = models.BooleanField(default=False)
     
 class SetlistSong(models.Model):
     setlist = models.ForeignKey(Setlist)

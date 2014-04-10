@@ -4,14 +4,10 @@
     <title>InspirePraise {% block title %}{% endblock %}</title>
     {% load staticfiles %}
     <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
-    
-    <!-- <link href="{% static 'songs/style.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <script src="{% static 'songs/jquery-1.10.2.min.js' %}"></script> -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="{% static 'songs/bootstrap/js/bootstrap.js' %}"></script>
-    <!-- <link rel="stylesheet" href="{% static 'songs/font-awesome/css/font-awesome.min.css' %}"> -->
-
     <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
+    <script src="{% static 'songs/setlist_push.js' %}"></script>   
     <style>
     html {
         overflow-y:scroll;
@@ -76,22 +72,53 @@
             
         </ul>
     </nav>
-<!-- USE THIS WHEN READY TO IMPLEMENT MESSAGING -->
-<!--     <div class="alert alert-success fade in">
-        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h4>Awww Yeaaah! Someone is sending you a setlist!</h4>
-            <p>
-                Should you choose to accept the setlist, your current setlist will be overwritten.
+{% if request.session.pushed_setlist %}
+    <div id="setlist-push-alert" class="alert alert-success fade in">
+        <button type="button" id="setlist-push-alert-close" class="close" data-dismiss="alert" 
+            aria-hidden="true">&times;</button>
+        <h4>Awww Yeaaah! Someone has sent you a setlist!</h4>
+        <div class="row">
+            <div class="col-md-12">
+                <p>
+                Should you choose to accept the setlist, your current setlist will be archived.
                 <br>If you reject it, you won't have the chance to get it back short of awkwardly asking the sender
                 to resend it.
-            </p>
-        <p>
-            <button type="button" class="btn btn-success">Accept</button>
-            <button type="button" class="btn btn-primary">Archive</button>
-            <button type="button" class="btn btn-default">Reject</button>
-        </p>
-    </div> -->
-            
+                </p>
+            </div>
+        </div>
+        <ul class='list-group'>
+            {% for setlist in request.session.pushed_setlist %}
+            <li class="list-group-item list-group-item-success">
+                <div class="row">
+                <div class="col-md-9">
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{setlist.date}} - {{setlist.created_by}} 
+                            {% if setlist.notes %} - {{setlist.notes}} {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            {% for song in setlist.setlistsong_set.all %}
+                                {% if forloop.last %}
+                                    {{song.song}} ({{song.key}})
+                                {%else %}
+                                    {{song.song}} ({{song.key}}),
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-success accept-setlist" name="{{setlist.id}}">Accept</button>
+                    <button type="button" class="btn btn-default reject-setlist" name="{{setlist.id}}">Reject</button>
+                </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
 <!-- {% if not user.is_authenticated %}
 
         <div class="jumbotron">
