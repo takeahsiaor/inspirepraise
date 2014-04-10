@@ -1016,7 +1016,6 @@ def invite_to_ministry(request, ministry_code):
         if form.is_valid():
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
-            # emails_passwords = []
             sent = [] #gather emails that will be sent
             already_invited = [] #gather emails that have already been invited
             for email in email_list:
@@ -1025,12 +1024,10 @@ def invite_to_ministry(request, ministry_code):
                 try:
                     invite = Invitation.objects.get(email=email, ministry=ministry)
                 except:
-                    invite = None
-                    
+                    invite = None                    
                 if invite:
                     already_invited.append(email)
                     continue
-                    
                 #test if user already exists. if so, then just send invitation no need to create user.
                 try:
                     user = User.objects.get(email=email)
@@ -1039,15 +1036,15 @@ def invite_to_ministry(request, ministry_code):
                     #create new user if none exists
                     username = get_md5_hexdigest(email)
                     password = username[:10]
-                    # user = User(username=username, email=email, is_active=False)
-                    # user.set_password(password)
-                    # user.save()
+                    user = User(username=username, email=email, is_active=False)
+                    user.set_password(password)
+                    user.save()
                 #create invitation
-                # invite = Invitation(email=email, ministry=ministry)
-                # invite.save()
+                invite = Invitation(email=email, ministry=ministry)
+                invite.save()
                 sender = current_user.email
                 #send email
-                # send_ministry_invitation(user, password, sender, ministry)
+                send_ministry_invitation(user, password, sender, ministry)
                 sent.append(email)
             if sent:
                 msg_for_sent = 'Invitations have been sent to the following addresses: ' + ' ,'.join(sent)
