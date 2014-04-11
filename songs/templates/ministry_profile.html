@@ -29,11 +29,13 @@
 <div>
     Members
     <ul>
-        {% for member in members %}
-            {% if member.user.first_name and member.user.last_name %}
-            <li>{{member.user.first_name}} {{member.user.last_name}} - {{member.user.email}}</li>
+        {% for mm in members_memberships %}
+            {% if mm.member.user.first_name and mm.member.user.last_name %}
+            <li>{{ mm.member.user.first_name}} {{ mm.member.user.last_name}} - {{ mm.member.user.email}}
+            {% if mm.admin %} (Administrator) {%endif %}
+            </li>
             {% else %}
-            <li>{{member.user.email}}</li>
+            <li>{{ mm.member.user.email}}{% if mm.admin %} (Administrator) {%endif %}</li>
             {% endif %}
         {% endfor %}
     </ul>

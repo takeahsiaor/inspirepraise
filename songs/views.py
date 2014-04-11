@@ -605,16 +605,6 @@ def retrieve_setlist(request, **kwargs):
             request.session['setlist'] = []
         return 
     
-# def make_user_active(request, **kwargs):
-    # """
-    # For first time logging in, for the case of invitation, make user active
-    # """
-    # user = User.objects.get(id=request.user.id)
-    # if not user.is_active:
-        # user.is_active = True
-        # user.save()
-    # return
-    
 def login_on_activation(sender, user, request, **kwargs):
     """Logs in the user after activation"""
     user.backend = 'django.contrib.auth.backends.ModelBackend' 
@@ -1079,7 +1069,7 @@ def invite_to_ministry(request, ministry_code):
 @login_required
 def ministry_profile(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
-    members = Profile.objects.filter(ministries=ministry) #members is queryset of profile objects that are part of ministry
+    members_memberships = MinistryMembership.objects.filter(ministry=ministry) #queryset of membership objects
     current_user = User.objects.get(id=request.user.id)
     profile = Profile.objects.get(user=current_user)
     try:
@@ -1087,7 +1077,8 @@ def ministry_profile(request, ministry_code):
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
     
-    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'members':members})
+    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 
+        'members_memberships':members_memberships})
 
 @login_required
 def leave_ministry(request, ministry_code):
@@ -1611,7 +1602,11 @@ def setlist(request):
     handles display of setlist
     """
     #common section
-    setlist_as_list = request.session['setlist'] #just a list of tuples
+    try: # makes sure structure is in place if no songs are in setlist and not logged in
+        setlist_as_list = request.session['setlist'] #just a list of tuples
+    except:
+        setlist_as_list = []
+        request.session['setlist'] = []
     keylist = []
     song_list = [] #list of Song objects
     

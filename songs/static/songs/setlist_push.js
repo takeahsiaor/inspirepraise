@@ -2,6 +2,7 @@ $(document).ready(function () {
  
  $('.accept-setlist').click(function(){
         setlist_id = $(this).attr('name');
+        //is this necessary if i'm redirecting anyways?
         $(this).closest('li').slideUp(function(){
             $(this).remove();
         })
@@ -9,9 +10,11 @@ $(document).ready(function () {
             if (response.indexOf('False') >= 0){ //response is true if there are still pushed setlists
                 $('#setlist-push-alert-close').trigger('click');
             }
-            index = response.indexOf('|');
-            setlist_length = response.substring(0,index);
-            $('.nav_setlistnum').text(setlist_length.toString());
+            window.location.replace("/setlist/")
+            //no need to update the badge since i'm forcing redirect to setlist
+            // index = response.indexOf('|');
+            // setlist_length = response.substring(0,index);
+            // $('.nav_setlistnum').text(setlist_length.toString());
         });
     });
     

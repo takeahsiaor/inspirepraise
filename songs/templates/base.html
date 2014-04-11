@@ -4,10 +4,12 @@
     <title>InspirePraise {% block title %}{% endblock %}</title>
     {% load staticfiles %}
     <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
+    <!-- <link href="{% static 'songs/bootstrap/css/sticky-footer.css'%}" rel="stylesheet" type="text/css"> -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="{% static 'songs/bootstrap/js/bootstrap.js' %}"></script>
     <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
     <script src="{% static 'songs/setlist_push.js' %}"></script>   
+    <link href="{% static 'songs/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
     <style>
     html {
         overflow-y:scroll;
@@ -55,7 +57,7 @@
                 </ul>
             </li>
             {% else %}
-            <li><a href="{% url 'songs.views.setlist' %}">Set List <span id="nav_setlistnum" class="badge">{{request.session.setlist|length}}</span></a></li>
+            <li><a href="{% url 'songs.views.setlist' %}">Set List <span class="badge nav_setlistnum">{{request.session.setlist|length}}</span></a></li>
             {% endif %}
         </ul>
         
@@ -141,14 +143,17 @@
 {% block content %}
 {% endblock %}
 
-
-<!-- <footer class="footer">
+<!-- 
+<div id="footer">
     <div class='container'>
     {% block footer %}
-    <p>Copyright 2013 - WorshipVerse</p>
+    <hr>
+    <div class="col-md-4">
+        <p class="text-muted">Copyright 2014 - InspirePraise</p>
+    </div>
     {% endblock %}
     </div>
-</footer> -->
+</div> -->
 
 </body>
 </html>
