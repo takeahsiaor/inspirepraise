@@ -102,11 +102,19 @@ $(document).ready(function () {
         });
     });
     
+    //everytime you open up the publish modal, reset the options
+    $('.publish-button').click(function(){
+        $('#save-usage-stats').prop('checked', false);
+        $('#send-to-none').prop('checked', true);
+    });
+    
+    //this is when you click the ok button in the publish modal
     $('.share-setlist').click(function(){
         ministry_id = $('input[name=ministryOption]:checked').val();
+        save_stats = $('#save-usage-stats').prop('checked');
         $.pnotify({
-            title: 'Setlist Shared!',
-            text: "Cool! You've just shared this setlist with members of a ministry.",
+            title: 'Setlist Published!',
+            text: "Cool! You've just published this setlist!",
             type: 'success',
             delay: 3000,
             styling: "bootstrap",
@@ -114,7 +122,7 @@ $(document).ready(function () {
             addclass: "stack-topright",
             stack: stack_topright,
         });
-        $.get('/push-setlist/', {'ministry_id':ministry_id}, function(response){
+        $.get('/push-setlist/', {'ministry_id':ministry_id, 'save_stats':save_stats}, function(response){
         
         });
     });

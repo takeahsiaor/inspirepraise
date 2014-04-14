@@ -7,8 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
-from songs.models import Invitation
-from songs.models import Setlist, SetlistSong
+from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
@@ -1577,7 +1576,31 @@ def push_setlist(request):
     current_setlist_songs = SetlistSong.objects.filter(setlist=current_setlist)
     
     ministry_id = request.GET.get('ministry_id')
+    save_stats = request.GET.get('save_stats')
+    #normalize jquery boolean to python boolean
+    if save_stats == 'true':
+        save_stats = True
+    else:
+        save_stats = False
+        
+    if save_stats: #save songs to profile will always save to profile no matter what
+        for setlistsong in current_setlist_songs:
+            profilesong = ProfileSong(profile=current_profile, song=setlistsong.song, key=setlistsong.key)
+            print profilesong.profile, profilesong.song, profilesong.key
+            profilesong.save()    
+    
+    if ministry_id == "none": #Not sending to any ministries
+        print 'i did not send anything'
+        return HttpResponseRedirect(reverse('songs.views.success'))
+    
+    #only continues here if there is some ministry to send to 
     ministry = Ministry.objects.get(id=ministry_id)
+    if save_stats: #sending to ministry, save songs to ministry
+        for setlistsong in current_setlist_songs:
+            ministrysong = MinistrySong(ministry=ministry, song=setlistsong.song, key=setlistsong.key)
+            print ministrysong.ministry, ministrysong.song, ministrysong.key
+            ministrysong.save()
+
     memberships = MinistryMembership.objects.filter(ministry=ministry)
     for membership in memberships:
         profile = membership.member

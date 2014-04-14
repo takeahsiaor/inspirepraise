@@ -82,10 +82,19 @@ class Ministry(models.Model):
     city = models.CharField(max_length=50)
     state_province = models.CharField(max_length=30)
     country = models.CharField(max_length=30)
+    songs_used = models.ManyToManyField(Song, through="MinistrySong", blank=True)
     # admin = models.ForeignKey(User)
     # members = models.ManyToManyField(User, blank=True)
     def __unicode__(self):
         return self.name
+        
+class MinistrySong(models.Model):
+    ministry = models.ForeignKey(Ministry)
+    song = models.ForeignKey(Song)
+    date = models.DateTimeField(auto_now_add=True)
+    key = models.CharField(max_length=6, blank=True)
+    def __unicode__(self):
+        return self.song.title + ' done by ' + self.ministry
 
 class Invitation(models.Model):
     #when admin sends invite, creates invitation for a given email/ministry combination
@@ -102,9 +111,17 @@ class Profile(models.Model):
     ministries = models.ManyToManyField(Ministry, through='MinistryMembership', blank=True)
     num_song_tags = models.IntegerField(default=0)
     num_verse_tags = models.IntegerField(default=0)
-    
+    songs_used = models.ManyToManyField(Song, through="ProfileSong", blank=True)
     def __unicode__(self):
         return self.user.email
+        
+class ProfileSong(models.Model):
+    profile = models.ForeignKey(Profile)
+    song = models.ForeignKey(Song)
+    date = models.DateTimeField(auto_now_add=True)
+    key = models.CharField(max_length=6, blank=True)
+    def __unicode__(self):
+        return self.song.title + ' done bye ' +self.profile
     
 class MinistryMembership(models.Model):
     # to future proof in case i want profile-ministry specific data like instrument played
@@ -115,6 +132,8 @@ class MinistryMembership(models.Model):
     #this doesn't work since if the invited doesn't have an account, no profile to create membership
     active = models.BooleanField(default=False) 
     admin = models.BooleanField(default=False) # this will allow multiple admins
+    def __unicode__(self):
+        return self.member + ' in ' + self.ministry
     
 class Setlist(models.Model):
     profile = models.ForeignKey(Profile)
@@ -135,4 +154,6 @@ class SetlistSong(models.Model):
     key = models.CharField(max_length=5)
     capo_key = models.CharField(max_length=5, blank=True)
     order = models.CharField(max_length=100, blank=True)
+    def __unicode__(self):
+        return self.song.title + ' in setlist ' + self.setlist.id
     

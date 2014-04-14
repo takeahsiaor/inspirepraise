@@ -140,7 +140,8 @@ td{
             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
             <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>        
             <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
-            <button type="button" class="btn btn-default" data-toggle="modal" data-target="#share-modal" >Share Setlist</button>
+            <button type="button" class="btn btn-default publish-button" data-toggle="modal" 
+                data-target="#share-modal" >Publish Setlist</button>
             <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
                 id="refresh-chords">Refresh</button>
         </div>
@@ -251,17 +252,25 @@ td{
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title" id="share-modal-label">Sharing is caring...</h4>
+            <h4 class="modal-title" id="share-modal-label">Publish Setlist</h4>
           </div>
           <div class="modal-body" id="share-modal-body">
-            <span class="help-block">Choose the ministry you'd like to share this setlist with:</span>
             {% if ministries %}
+                <span>
+                    You can publish this setlist to any of the following ministries:
+                </span>
+                <div class="radio">
+                    <label>
+                    <input id="send-to-none" type="radio" name="ministryOption" 
+                        value="none" checked>Don't send to any ministry
+                    </label>
+                </div>
                 {% for membership in ministries %}
                 <div class="radio">
                     <label>
                     {% if forloop.first %}
                         <input type="radio" name="ministryOption" 
-                            value="{{membership.ministry.id}}" checked>
+                            value="{{membership.ministry.id}}">
                     {% else %}
                         <input type="radio" name="ministryOption" 
                             value="{{membership.ministry.id}}">
@@ -270,10 +279,34 @@ td{
                     </label>
                 </div>
                 {% endfor %}
+                <hr>
+                <span>By clicking the checkbox below, we will record the songs and keys you've chosen in order
+                    to give you statistics on when, how often, and in what key you've chosen these songs in the past!
+                    You should only click this when you're publishing a "final" setlist.</span>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="save-usage-stats">Save song usage statistics
+                    </label>
+                </div>
+            {% else %}
+                <span>
+                    By publishing this setlist, we will record the songs and keys you've chosen in order
+                    to give you statistics on when, how often, and in what key you've chosen these songs in the past!
+                    You should only publish when you have a "final" setlist.
+                </span>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="save-usage-stats" checked disabled>
+                            <span class="help-block">Save song usage statistics</span>
+                    </label>
+                </div>
+            
+            
             {% endif %}
+            
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-success share-setlist" data-dismiss="modal">Share!</button>
+            <button type="button" class="btn btn-success share-setlist" data-dismiss="modal">Publish!</button>
             <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
           </div>
         </div><!-- /.modal-content -->
