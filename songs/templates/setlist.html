@@ -140,7 +140,8 @@ td{
             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
             <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>        
             <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
-            <button type="button" class="btn btn-default publish-button" data-toggle="modal" 
+            
+            <button type="button" class="btn btn-default {% if ministries %}publish-button{%endif%}" data-toggle="modal" 
                 data-target="#share-modal" >Publish Setlist</button>
             <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
                 id="refresh-chords">Refresh</button>
@@ -285,7 +286,7 @@ td{
                     You should only click this when you're publishing a "final" setlist.</span>
                 <div class="checkbox">
                     <label>
-                        <input type="checkbox" id="save-usage-stats">Save song usage statistics
+                        <input type="checkbox" id="save-usage-stats" checked>Save song usage statistics
                     </label>
                 </div>
             {% else %}

@@ -72,6 +72,14 @@ class UpdateSetlistUnauth(TestCase):
         ccli = str(song.ccli)
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
         self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
+
+#test publish setlist four cases. 
+#1. send to ministry, no data save
+#2. send to ministry, with data save
+#3. don't send to any, no data
+#4. don't send to any, with data save
+#5. no ministry to send to, no data
+#6. no ministry to send to, with data save
         
 class UpdateSetlistAuth(TestCase):       
     def setUp(self):

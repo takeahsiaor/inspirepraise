@@ -91,11 +91,18 @@ class Ministry(models.Model):
 class MinistrySong(models.Model):
     ministry = models.ForeignKey(Ministry)
     song = models.ForeignKey(Song)
-    date = models.DateTimeField(auto_now_add=True)
-    key = models.CharField(max_length=6, blank=True)
+    times_used = models.IntegerField(default=0)
+    last_used = models.DateTimeField(auto_now=True)
+    # key = models.CharField(max_length=6, blank=True)
     def __unicode__(self):
-        return self.song.title + ' done by ' + self.ministry
+        return self.song.title + ' done by ' + self.ministry.name
 
+class MinistrySongDetails(models.Model):
+    ministrysong = models.ForeignKey(MinistrySong)
+    date = models.DateTimeField(auto_now_add = True)
+    key = models.CharField(max_length=6, blank=True)
+    song_context = models.TextField(default='', max_length=200, blank=True)
+        
 class Invitation(models.Model):
     #when admin sends invite, creates invitation for a given email/ministry combination
     #when user logs in or creates account, once verified, will check against if invitation exists
@@ -118,10 +125,16 @@ class Profile(models.Model):
 class ProfileSong(models.Model):
     profile = models.ForeignKey(Profile)
     song = models.ForeignKey(Song)
+    times_used = models.IntegerField(default=0)
+    last_used = models.DateTimeField(auto_now=True)
+    def __unicode__(self):
+        return self.song.title + ' done by ' +self.profile.user.email
+        
+class ProfileSongDetails(models.Model):
+    profilesong = models.ForeignKey(ProfileSong)
     date = models.DateTimeField(auto_now_add=True)
     key = models.CharField(max_length=6, blank=True)
-    def __unicode__(self):
-        return self.song.title + ' done bye ' +self.profile
+    song_context = models.TextField(default='', max_length=200, blank=True)
     
 class MinistryMembership(models.Model):
     # to future proof in case i want profile-ministry specific data like instrument played

@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
-from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong
+from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
@@ -157,7 +157,7 @@ def chord_html(request):
                         current_setlist = request.session['current_setlist']
                         setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
                         song_notes_string = setlist_song.notes
-                        print song_notes_string
+                        # print song_notes_string
                         if song_notes_string:
                             song_notes_lines = song_notes_string.split('\n')
                             html += '<br><h5>Song Notes:</h5>'
@@ -922,7 +922,6 @@ def lookup(request):
                 else:
                     num_old = num_old + 1
                 songs.append(song)
-            print template
             return render(request, template, {'songs':songs, 'url':url, 'num_new':num_new, 'num_old':num_old, 'popup':popup, 'query':query})
     return render(request, template, {'errors':errors, 'popup':popup})
 
@@ -1115,7 +1114,9 @@ def profile(request):
     user = User.objects.get(id=request.user.id)        
     #attempt to fix the logging in of created superuser and having no profile
     profile = Profile.objects.get(user=user)
-    return render(request, 'profile.html', {'profile': profile})
+    common_songs = ProfileSong.objects.filter(profile=profile).order_by('-times_used')[:5]
+    recent_songs = ProfileSong.objects.filter(profile=profile).order_by('-last_used')[:5]
+    return render(request, 'profile.html', {'profile': profile, 'common_songs':common_songs, 'recent_songs':recent_songs})
 
 @login_required
 def edit_profile(request):
@@ -1332,7 +1333,6 @@ def search_all(request):
         songs = paginator.page(1)
     except EmptyPage:
         songs = paginator.page(paginator.num_pages)
-    print songs
     keylist = []
     for song in songs:
         key = get_chordpro_key(song)
@@ -1585,11 +1585,17 @@ def push_setlist(request):
         
     if save_stats: #save songs to profile will always save to profile no matter what
         for setlistsong in current_setlist_songs:
-            profilesong = ProfileSong(profile=current_profile, song=setlistsong.song, key=setlistsong.key)
-            print profilesong.profile, profilesong.song, profilesong.key
-            profilesong.save()    
-    
-    if ministry_id == "none": #Not sending to any ministries
+            #for each song, test if there exists a profilesong object already
+            profilesong, created = ProfileSong.objects.get_or_create(profile=current_profile, song=setlistsong.song)
+            profilesong.times_used = profilesong.times_used + 1
+            profilesong.save()
+            # print profilesong.profile, profilesong.song, profilesong.times_used
+            profilesongdetails = ProfileSongDetails(profilesong=profilesong, key=setlistsong.key, 
+                song_context=current_setlist.song_order)
+            profilesongdetails.save()
+            # print profilesongdetails.key, profilesongdetails.from_setlist
+            
+    if ministry_id == "none" or ministry_id == None: #Not sending to any ministries
         print 'i did not send anything'
         return HttpResponseRedirect(reverse('songs.views.success'))
     
@@ -1597,10 +1603,16 @@ def push_setlist(request):
     ministry = Ministry.objects.get(id=ministry_id)
     if save_stats: #sending to ministry, save songs to ministry
         for setlistsong in current_setlist_songs:
-            ministrysong = MinistrySong(ministry=ministry, song=setlistsong.song, key=setlistsong.key)
-            print ministrysong.ministry, ministrysong.song, ministrysong.key
+            ministrysong, created = MinistrySong.objects.get_or_create(ministry=ministry, song=setlistsong.song)
+            ministrysong.times_used = ministrysong.times_used + 1
             ministrysong.save()
-
+            # print ministrysong.ministry, ministrysong.song, ministrysong.times_used
+            ministrysongdetails = MinistrySongDetails(ministrysong=ministrysong, key=setlistsong.key, 
+                song_context=current_setlist.song_order)
+            # print ministrysongdetails.key, ministrysongdetails.from_setlist
+            ministrysongdetails.save()
+            
+    print 'i sent something'
     memberships = MinistryMembership.objects.filter(ministry=ministry)
     for membership in memberships:
         profile = membership.member

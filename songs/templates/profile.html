@@ -54,4 +54,36 @@
     </p>
     </div>
 </div>
+
+<div class="row">
+<div class="col-md-4">
+    {% if recent_songs %}
+    <h2>Recently used Songs</h2>
+    <ul class="list-group">
+        {% for recent_song in recent_songs %}
+        <li class="list-group-item">
+        {{recent_song.last_used}} - {{recent_song.song.title}} 
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<div class="col-md-8">
+    {% if common_songs %}
+    <h2>Songs most commonly used</h2>
+    <ul class="list-group">
+        {% for common_song in common_songs %}
+        <li class="list-group-item">
+            {{common_song.song.title}} ({{common_song.times_used}})
+<!--             {% for detail in common_song.profilesongdetails_set.all %}
+            {{detail.key}}
+            {% endfor %} -->
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+
+</div>
 {% endblock %}
