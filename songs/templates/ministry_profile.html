@@ -45,6 +45,46 @@
 Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 </p>
 
+
+<div class="row">
+<div class="col-md-4">
+    {% if recent_songs %}
+    <h2>Recently used Songs</h2>
+        {% for recent_song in recent_songs %}
+        <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
+            data-target="#song-stats-details" id="{{recent_song.song.ccli}}" name="{{ministry.id}}">
+        {{recent_song.last_used|date}} - {{recent_song.song.title}} 
+        </button>
+        {% endfor %}
+
+    {% endif %}
+</div>
+<div class="col-md-8">
+    {% if common_songs %}
+    <h2>Commonly used Songs</h2>
+        {% for common_song in common_songs %}
+        <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
+            data-target="#song-stats-details" id="{{common_song.song.ccli}}" name="{{ministry.id}}">
+            {{common_song.song.title}} ({{common_song.times_used}})
+        </button>
+        {% endfor %}
+    {% endif %}
+</div>
+</div>
+
+<!-- modal for song details -->
+<div class="modal fade" id="song-stats-details" tabindex="-1" role="dialog" 
+ aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="modal-content">
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
+
 <div class="modal fade" id="leave-ministry-confirm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">

@@ -26,6 +26,7 @@
             <File name="songs\static\songs\django-admin.multiselect.js" />
             <File name="songs\static\songs\simple-pagination\jquery.simplePagination.js" />
             <File name="songs\static\songs\ministry.js" />
+            <File name="songs\static\songs\profile.js" />
             <File name="songs\static\songs\search_verses.js" />
             <File name="songs\static\songs\search_songs.js" />
             <File name="songs\static\songs\set_list.js" />
@@ -49,6 +50,7 @@
             <File name="songs\templates\create_ministry_form.html" />
             <File name="songs\templates\edit_form.html" />
             <File name="songs\templates\form.html" />
+            <File name="songs\templates\format_as_html.html" />
             <File name="songs\templates\format_as_option_list.html" />
             <File name="songs\templates\home.html" />
             <File name="songs\templates\invitation_email.txt" />

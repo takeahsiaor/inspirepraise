@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+{% load staticfiles %}
+{% block headloaders %} 
+<script src="{% static 'songs/profile.js' %}"></script>
+
+{% endblock %}
 
 {% block content %}
 <h1>Welcome {{user.email}}</h1>
@@ -38,7 +43,8 @@
         {% if profile.ministries.all %}
         <h2>Ministries</h2>
             {% for ministry in profile.ministries.all %}
-                <a class="btn btn-default" style="margin-bottom:5px" href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a>  
+                <a class="btn btn-default" style="margin-bottom:5px" 
+                    href="{% url 'songs.views.ministry_profile' ministry.id %}">{{ministry.name}}</a>  
             {% endfor %}
         {% endif %}
 
@@ -59,31 +65,35 @@
 <div class="col-md-4">
     {% if recent_songs %}
     <h2>Recently used Songs</h2>
-    <ul class="list-group">
         {% for recent_song in recent_songs %}
-        <li class="list-group-item">
-        {{recent_song.last_used}} - {{recent_song.song.title}} 
-        </li>
+        <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
+            data-target="#song-stats-details" name="{{recent_song.song.ccli}}">
+        {{recent_song.last_used|date}} - {{recent_song.song.title}} 
+        </button>
         {% endfor %}
-    </ul>
+
     {% endif %}
 </div>
 <div class="col-md-8">
     {% if common_songs %}
-    <h2>Songs most commonly used</h2>
-    <ul class="list-group">
+    <h2>Commonly used Songs</h2>
         {% for common_song in common_songs %}
-        <li class="list-group-item">
+        <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
+            data-target="#song-stats-details" name="{{common_song.song.ccli}}">
             {{common_song.song.title}} ({{common_song.times_used}})
-<!--             {% for detail in common_song.profilesongdetails_set.all %}
-            {{detail.key}}
-            {% endfor %} -->
-        </li>
+        </button>
         {% endfor %}
-    </ul>
     {% endif %}
 </div>
-
-
 </div>
+
+<!-- modal for song details -->
+<div class="modal fade" id="song-stats-details" tabindex="-1" role="dialog" 
+ aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="modal-content">
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}

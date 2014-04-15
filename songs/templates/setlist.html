@@ -154,11 +154,13 @@ td{
         </div>
         <br>
         <ul class="sortable list-group">
-        {% for song, option_list, setlist_song in song_optionlist_setlistsong %}
+        {% for song, option_list, setlist_song, profilesong in song_optionlist_setlistsong %}
             {% if song.chords %}
                 <li class="list-group-item" name="{{song.ccli}}">
                 <div class="row">
-                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-3">{{song.title}}
+                        {% if profilesong %}<br><small><em>Last used {{profilesong.last_used|date}}</em></small>{% endif%}
+                    </div>
                     <div class="col-md-4">
                         <div class="col-md-4">
                             <select class="form-control transpose-value" name="{{song.ccli}}" 
@@ -199,6 +201,11 @@ td{
                             &times;
                         </button>
                     </div>
+                </div>
+                <div class="row">
+                <div class="col-md-3">
+                    
+                </div>
                 </div>
                 <!-- modal for each song -->
                 <div class="modal fade song-note-modal" name={{song.ccli}} id="song-note-modal-{{song.ccli}}" 

@@ -67,6 +67,8 @@ urlpatterns = patterns('',
     url(r'^lyrics/$', views.lyrics_to_text),
     # url(r'^send-setlist-to-archive/$', views.archive_setlist),
     url(r'^archived-setlist/$', views.display_archived_setlist),
+    url(r'^song-usage-details-profile/$', views.song_usage_details_profile),
+    url(r'^song-usage-details-ministry/$', views.song_usage_details_ministry),
     
     # url(r'^suggest/$', views.suggestion),
     
