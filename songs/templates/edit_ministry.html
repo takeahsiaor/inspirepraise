@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %} | Edit Ministry Info{% endblock %}
+
+{% block content %}
+
+<h1>Edit {{ministry.name}} Ministry Info</h1>
+    
+{% if form.errors %}
+<div class="alert alert-danger">
+    Please correct the error{{ form.errors|pluralize }} below.
+    <ul>
+    {% for error in form.errors %}
+        <li>Invalid {{error}}</li>
+    
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row">
+<div class="col-md-12">
+<h3>Current Ministry Information</h3>
+    <p>Address: {{ministry.address}}<br>
+    City: {{ministry.city}}<br>
+    State/Province: {{ministry.state_province}}<br>
+    Country: {{ministry.country}}<br>
+    </p>
+<h3>Edit Info</h3>
+<form action="" method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="id_address">Address</label>
+        <input type="text" id="id_address" class="form-control" name="address" placeholder="Address..." />
+    </div>
+    <div class="form-group">
+        <label for="id_city">City</label>
+        <input type="text" name="city" id="id_city" class="form-control" placeholder="City..." />
+    </div>
+    
+    <div class="form-group">
+        <label for="id_state_province">State/Province</label>
+        <input type="text" name="state_province" id="id_state_province" class="form-control" placeholder="State/Province..." />
+    </div>
+    
+    <div class="form-group">
+        <label for="id_country">Country</label>
+        <input type="text" id="id_country" class="form-control" name="country" placeholder="Country..." />
+    </div>
+    
+    <input class="btn btn-primary" type="submit" value="Submit">
+</form>
+</div>
+</div>
+
+{% endblock %}

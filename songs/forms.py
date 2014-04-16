@@ -135,6 +135,11 @@ class MinistryForm(forms.ModelForm):
         model = Ministry
         fields = ['name', 'address', 'city', 'state_province', 'country']
         
+class MinistryEditForm(forms.ModelForm):
+    class Meta:
+        model = Ministry
+        fields = [ 'address', 'city', 'state_province', 'country']
+        
 class ProfileForm(forms.ModelForm):
     required_css_class = "required"
     class Meta:

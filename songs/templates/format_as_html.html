@@ -36,7 +36,7 @@
             </div>
         </div>
         {% if percentages %}
-        <span class="help-block">Distribution of personal key usage for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys you've used for <em>{{song.title}}</em></span>
         {% for key, percentage in percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -53,7 +53,7 @@
         {% endif %}
         {% if global_percentages %}
         <br>
-        <span class="help-block">Key distribution of all users for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
         {% for gkey, gpercentage in global_percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -102,7 +102,7 @@
             </div>
         </div>
         {% if percentages %}
-        <span class="help-block">Distribution of ministry key usage for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys this ministry used for <em>{{song.title}}</em></span>
         {% for key, percentage in percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -119,7 +119,7 @@
         {% endif %}
         {% if global_percentages %}
         <br>
-        <span class="help-block">Key distribution of all users for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
         {% for gkey, gpercentage in global_percentages %}
         <div class="row">
             <div class="col-md-1">

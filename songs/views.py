@@ -6,6 +6,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
+from songs.forms import MinistryEditForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
 from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
 from django.core.mail import send_mail
@@ -13,7 +14,7 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from django.contrib.auth import login, authenticate, logout #these are functions
 from django.contrib.auth import views #these are views
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
@@ -1049,11 +1050,42 @@ def invite_to_ministry(request, ministry_code):
             if already_invited:
                 msg_for_already_invited = 'These people have already been invited: ' + ' ,'.join(already_invited)
                 messages.warning(request, msg_for_already_invited)            
-
-            return HttpResponseRedirect(reverse('songs.views.profile'))
+            url = '/ministry/'+str(ministry.id)
+            return HttpResponseRedirect(url)
     else:
         form = InviteForm()
     return render(request, 'invite_to_ministry.html', {'form':form,'ministry':ministry})
+
+@login_required
+def ministry_admin_rights(request):
+    """
+    Currently gives ministry admin rights to selected members
+    Can change this to also revoke
+    """
+    ministry_id = request.GET.get('ministry_id')
+    ministry = Ministry.objects.get(id=ministry_id)
+    current_user = request.user
+    profile = Profile.objects.get(user=current_user)
+    try:
+        membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    
+    membership_ids = request.GET.get('membership_ids')[:-1] #string of id numbers
+    if not membership_ids:
+        return HttpResponseRedirect(reverse('songs.views.success')) #no users selected
+        
+    membership_ids = membership_ids.split(',') # convert string to list
+    memberships = MinistryMembership.objects.filter(id__in=membership_ids)
+    memberships.update(admin=True)
+    admin_emails = []
+    for membership in memberships:
+        admin_emails.append(membership.member.user.email)
+    message = "Admin rights have been successfully given to the following users: " + ', '.join(admin_emails)
+    messages.success(request, message)
+    return HttpResponseRedirect(reverse('songs.views.success'))
     
 @login_required
 def ministry_profile(request, ministry_code):
@@ -1071,6 +1103,65 @@ def ministry_profile(request, ministry_code):
     return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 
         'members_memberships':members_memberships, 'common_songs':common_songs,'recent_songs':recent_songs})
 
+@login_required
+def edit_ministry(request, ministry_code):
+    ministry = Ministry.objects.get(id=ministry_code)
+    members_memberships = MinistryMembership.objects.filter(ministry=ministry) #queryset of membership objects
+    current_user = request.user
+    profile = Profile.objects.get(user=current_user)
+    try:
+        membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+        
+    if request.method =="POST":
+        form = MinistryEditForm(request.POST)
+        # form.add_ministry(request.POST.get('ministry_code'))
+        if form.is_valid():
+            ministry.address = request.POST.get('address')
+            ministry.city = request.POST.get('city')
+            ministry.state_province = request.POST.get('state_province')
+            ministry.country = request.POST.get('country')
+            # print ministry.address
+            # print ministry.city
+            # print ministry.state_province
+            # print ministry.country
+            ministry.save()
+            msg = "Ministry update successful!"
+            messages.success(request, msg)
+            #should this direct back to the edit screen or profile or success page?
+            #pretty bad way of doing it but no other ideas
+            url = '/ministry/'+str(ministry.id)
+            # return HttpResponseRedirect(reverse('songs.views.profile'))
+            return HttpResponseRedirect(url)
+    else:
+        form = MinistryEditForm(initial={'address': ministry.address, 'city': ministry.city,
+            'state_province':ministry.state_province, 'country':ministry.country})
+    return render(request, 'edit_ministry.html', {'form':form, 'ministry':ministry})
+
+@login_required
+def delete_ministry(request, ministry_code):
+    """
+    handles the deletion of a ministry provided user has appropriate rights
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    ministry = Ministry.objects.get(id=ministry_code)
+    try:
+        membership = MinistryMembership.objects.get(member=profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    ministry.delete()
+    # print "i'm deleting the following ministry"
+    # print ministry
+    msg = "%s ministry successfully deleted!" % ministry.name
+    messages.success(request, msg)
+    return HttpResponseRedirect(reverse('songs.views.profile'))
+    
 @login_required
 def leave_ministry(request, ministry_code):
     """
@@ -1685,7 +1776,15 @@ def push_setlist(request):
         save_stats = True
     else:
         save_stats = False
-        
+    
+    #save song popularity here
+    setlist_as_tuples = request.session['setlist']
+    ccli_list = []
+    for ccli_key in setlist_as_tuples:
+        ccli_list.append(ccli_key[0])
+    songs_queryset = Song.objects.filter(ccli__in=ccli_list)
+    songs_queryset.update(popularity=F('popularity') +1) # uses F expression to increment popularity value
+   
     if save_stats: #save songs to profile will always save to profile no matter what
         for setlistsong in current_setlist_songs:
             #for each song, test if there exists a profilesong object already

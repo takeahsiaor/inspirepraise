@@ -49,6 +49,8 @@
             <File name="songs\templates\contact_thanks.html" />
             <File name="songs\templates\create_ministry_form.html" />
             <File name="songs\templates\edit_form.html" />
+            <File name="songs\templates\edit_profile.html" />
+            <File name="songs\templates\edit_ministry.html" />
             <File name="songs\templates\form.html" />
             <File name="songs\templates\format_as_html.html" />
             <File name="songs\templates\format_as_option_list.html" />
