@@ -90,6 +90,20 @@
 
 </div>
 
+{% if user.is_authenticated %}
+<div class="row">
+<div class="col-md-3">
+    View song usage statistics from:
+    <select class="form-control">
+        <option value=0>{{user.email}}</option>
+        {% for ministry in ministries %}
+        <option value={{ministry.id}}>{{ministry.name}}</option>
+        {%endfor %}
+    </select>
+</div>
+</div><br>
+{% endif %}
+
 <p><a href="{% url 'songs.views.search_all' %}">Browse All Songs</a></p>
 <form class="form-horizontal" role="form"> <!-- action="" method="get" -->
     <div class="form-group row">

@@ -580,6 +580,8 @@ def retrieve_setlist(request, **kwargs):
     current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False, pushed=False)
     print setlist_created
     request.session['current_setlist'] = current_setlist
+    #currently will force stats context to be profile. Later can add database column to remember context
+    request.session['song_stats_context'] = profile
     if setlist_created: #new setlist object therefore no setlist order
         setlist_text =''
         print 'NEW SETLIST'
@@ -1474,6 +1476,23 @@ def success(request):
     # response = [r.title for r in results]
     # return HttpResponse(json.dumps(response), content_type="application/json")
     
+def change_song_stats_context(request):
+    """
+    This view is called via AJAX whenever the song stats context select box is changed.
+    Will gather the ID of the ministry or if 0, will get the profile of current user
+    to use as live stats in setlist display and search results
+    saves current context as session variable
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    id = int(request.GET.get('id'))
+    if id == 0:
+        request.session['song_stats_context'] = profile
+        return HttpResponseRedirect(reverse('songs.views.success'))
+        
+    ministry = Ministry.objects.get(id=id)
+    request.session['song_stats_context'] = ministry
+    return HttpResponseRedirect(reverse('songs.views.success'))
     
 def search_info(request):
     """
@@ -1482,6 +1501,16 @@ def search_info(request):
     some client side validation. 
     """
     #NEED SOMETHING LIKE PREFETCH_RELATED TO REDUCE QUERIES
+    #gets ministries for display in song stats context select box
+    if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        memberships = MinistryMembership.objects.select_related('ministry').filter(member=profile)
+        ministries = []
+        for membership in memberships:
+            ministries.append(membership.ministry)
+        print ministries
+        
     if 'query' in request.GET:
         # if request.GET.get('query') =='':
             # return 
@@ -1509,9 +1538,10 @@ def search_info(request):
                 songs = paginator.page(paginator.num_pages)
             
             keylist = []
+            song_object_list = []
             for song in songs:
                 key = get_chordpro_key(song)
-                # key = song.object.original_key
+                song_object_list.append(song.object) #this is to get a listo f song objects 
                 keylist.append(key)
             # print keylist
             #make option list for each song
@@ -1519,13 +1549,25 @@ def search_info(request):
             for key in keylist:
                 option_html = make_key_option_html(key)
                 option_list.append(option_html)
+                
+            ###WORK NEEDED HERE TO IMPLEMENT LIVE SONG STATS
+            if request.user.is_authenticated():
+                #this can either be the profile or a ministry object
+                stats_context = request.session['song_stats_context']
+                if stats_context == profile:
+                    print "profile context!!"
+                else:
+                    ministry_songs = MinistrySong.objects.filter(ministry=stats_context, song__in=song_object_list)
+                    print "ministry context!!"
+                    print ministry_songs
+                
             song_and_key_option_list = zip(songs, option_list)
             
             return render(request, 'search_results.html', {'songs': songs,'song_and_key_option_list':song_and_key_option_list, 'form':form, 'query':query, 
-                'by_info':True})
-        return render(request, 'search_form_title.html', {'form':form})
+                'by_info':True, 'ministries':ministries})
+        return render(request, 'search_form_title.html', {'form':form, 'ministries':ministries})
     form = SearchInfoForm()
-    return render(request, 'search_form_title.html', {'form':form})
+    return render(request, 'search_form_title.html', {'form':form, 'ministries':ministries})
     
 
 def search_all(request):

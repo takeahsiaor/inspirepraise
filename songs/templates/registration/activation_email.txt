@@ -2,7 +2,7 @@ Thank you for signing up for InspirePraise!
 
 Please click on the following link within {{expiration_days}} days to activate your account.
 
-www.{{site}}/accounts/activate/{{activation_key}}/
+www.inspirepraise.com/accounts/activate/{{activation_key}}/
 
 Thanks!
 The InspirePraise Team

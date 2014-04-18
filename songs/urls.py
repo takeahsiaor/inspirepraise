@@ -72,6 +72,7 @@ urlpatterns = patterns('',
     url(r'^archived-setlist/$', views.display_archived_setlist),
     url(r'^song-usage-details-profile/$', views.song_usage_details_profile),
     url(r'^song-usage-details-ministry/$', views.song_usage_details_ministry),
+    url(r'^change-song-stats-context/$', views.change_song_stats_context),
     
     # url(r'^suggest/$', views.suggestion),
     

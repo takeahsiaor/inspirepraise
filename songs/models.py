@@ -146,7 +146,7 @@ class MinistryMembership(models.Model):
     active = models.BooleanField(default=False) 
     admin = models.BooleanField(default=False) # this will allow multiple admins
     def __unicode__(self):
-        return self.member + ' in ' + self.ministry
+        return self.member.user.email + ' in ' + self.ministry.name
     
 class Setlist(models.Model):
     profile = models.ForeignKey(Profile)
