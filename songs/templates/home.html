@@ -1,38 +1,118 @@
-{% extends "base_home.html" %}
+{% extends "base.html" %}
 
 {% block content %}
+<div class="jumbotron">
+{% if not user.is_authenticated %}
+    <h1>
+    Simpler,<br>Scripture-based,<br>Song Selection
+    </h1>
+    <p>
+        Search through our database for songs <br>based on relevant verses. <br>
+        Signing up is easy!
+    </p>
+    <p><a class="btn btn-primary btn-lg" role="button" href="{% url 'registration_register'%}">Sign up!</a></p>
+{% else %}
+    <div class="row">
+    <div class="col-md-4">
+        <h2>Profile</h2>
+        <p>Tell us a little about yourself! Create or join a ministry and view statistics on your usage.</p>
+        <a class="btn btn-primary" href="{% url 'songs.views.profile' %}">View Profile</a>
+    </div>
+    <div class="col-md-4">
+        <h2>Search songs</h2>
+        <p>Go ahead and peruse our song database either by verses or by song information.</p>
+        <a class="btn btn-primary" href="{% url 'songs.views.search_verses' %}">By Verses</a>
+        <a class="btn btn-primary" href="{% url 'songs.views.search_info' %}">By Info</a>
+    </div>
+    <div class="col-md-4">
+        <h2>Tag songs</h2>
+        <p>Have you found songs that fit really well with some verses? Share it with us!</p>
+        <a class="btn btn-primary" href="{% url 'songs.views.tag_verses' %}">Tag</a>
+    </div>
+    </div>
+{% endif %}
+</div>
 
-<h1>Getting Started is Easy...</h1>
-
-<!-- SHOULD TALK MORE ABOUT BENEFITS RATHER THAN FEATURES -->
 <div class="row">
-<div class='col-md-4'>
-<h2>Step 1: Tag Songs</h2>
-<p>The InspirePraise database collects data submitted by users about which songs are 
-used for specific scripture passages. The more times a song is tagged to a verse, the higher
-the song will appear when another user searches for songs based on that verse! InspirePraise is only
-as good as your contributions make it so get tagging! <br> (<a href="#">Learn More...</a>)
-</p>
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-book fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>Scripture and (more importantly) the God of scripture inspires our praise so where better to look for song selection
+    suggestions? Search by verse to find relevant songs! 
+    </p>
+    <!-- <a class="btn btn-primary btn-sm" href="{% url 'songs.views.search_verses' %}">Search!</a> -->
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-music fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>We've all been there...looking for the correct song chords and in the right key. Preview 
+    and download chords that have each been individually checked and transpose them to the key you want. There's even 
+    recommended keys for congregational singing!
+    </p>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-list fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>Find the songs you want? Create a setlist where you can add notes to each song, determine play order, and more!
+    </p>
+    </div>
+</div>
+</div>
+<br>
+<div class="row">
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-users fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>Create or join ministries where you can share setlists you've created with other members of that ministry. Gone
+    are the days of sending out the setlist to your worship team through an email with attachments and links to chords.
+    </p>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-tags fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>Tag songs with verses that they go particularly well with so others in the future can find it. 
+    Every tag you make helps the worship community and further edifies the body!
+    </p>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-file-text fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>Do you use presentation software like Propresenter or Mediashout? Download the lyrics for songs to upload
+    directly into presentation software and save yourself the trouble of manually typing them in!
+    </p>
+    </div>
+</div>
+</div>
+<br>
+<div class="row">
+<div class="col-md-4">
+    <div class="col-md-3">
+    <i class="fa fa-tasks fa-5x pull-left"></i>
+    </div>
+    <div class="col-md-9">
+    <p>InspirePraise keeps track of songs you've used to provide you with information about how often you use that 
+    song, when you last used it, and what key you typically use. You can also compile all your song usage stats for
+    easy CCLI reporting!
+    </p>
+    </div>
 </div>
 
-<div class='col-md-4'>
-<h2>Step 2: Search for Songs</h2>
-<p>
-InspirePraise allows you to search for songs based on specific verses. You are no longer limited to 
-searching through preset theme categories that can be vague or inconsistent. The search will give
-a list of songs that have been previously tagged with the same verses you searched for. <br> (<a href="#">Learn More...</a>)
-</p>
-</div>
-
-<div class='col-md-4'>
-<h2>Step 3: Worship</h2>
-<p>
-InspirePraise helps to streamline the process of song selection for your corporate musical worship time so you can
-spend more time worshipping through music than worshipping through song selection! <br>
-(<a href="#">Learn More...</a>)
-</p>
-
-</div>
 </div>
 
 {% endblock %}

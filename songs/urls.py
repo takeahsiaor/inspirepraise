@@ -7,9 +7,10 @@ from songs import views, forms
 
 from registration.backends.default.views import RegistrationView
 from registration.forms import RegistrationFormUniqueEmail
-class RegistrationViewUniqueEmail(RegistrationView):
-    form_class = RegistrationFormUniqueEmail
+from songs.forms import RegistrationFormEmailAsUsername
 
+class RegistrationViewUniqueEmail(RegistrationView):
+    form_class = RegistrationFormEmailAsUsername
 
 urlpatterns = patterns('',
     # Examples:
@@ -35,17 +36,19 @@ urlpatterns = patterns('',
     url(r'success/$', views.success), #no caret means will match all ending in success
     url(r'^accounts/profile/$', views.profile),
     url(r'^ministry/(?P<ministry_code>\d{1,5})/$', views.ministry_profile),
-    url(r'^ministry/(?P<ministry_code>\d{1,5})/leave_confirm/$', views.leave_ministry_confirm),
     url(r'^ministry/(?P<ministry_code>\d{1,5})/leave/$', views.leave_ministry),
+    url(r'^ministry/(?P<ministry_code>\d{1,5})/delete/$', views.delete_ministry),
     url(r'^invite-to-ministry/(?P<ministry_code>\d{1,5})/$', views.invite_to_ministry),
+    url(r'^accept-invitation/$', views.accept_ministry_invitation),
+    url(r'^edit-ministry/(?P<ministry_code>\d{1,5})/$', views.edit_ministry),
+    url(r'^admin-rights/', views.ministry_admin_rights),
     url(r'^passreset/$', auth_views.password_reset, name='forgot_password1'),
-    # url(r'^accounts/login/$', 'django.contrib.auth.views.login'),
     url(r'^accounts/login/$', views.login_user),
     url(r'^accounts/profile/edit/$', views.edit_profile),
     url(r'^logout/$', views.logout_view),
     url(r'^forbidden/$', views.forbidden),
-    url(r'^accounts/register/$', RegistrationViewUniqueEmail.as_view(), name='registration_register'),
-    url(r'^accounts/', include('registration.backends.default.urls')),
+    # url(r'^accounts/register/$', RegistrationViewUniqueEmail.as_view(), name='registration_register'),
+    url(r'^accounts/', include('registration_email.backends.default.urls')),
     url(r'^tag-verses/$', views.tag_verses),
     url(r'^st/$', views.tag_verse_song_search),
     url(r'^songs-with-chords/$', views.search_songs_with_chords),
@@ -56,6 +59,8 @@ urlpatterns = patterns('',
     url(r'^import-dict/$', views.import_songverse_from_file),
     url(r'^chord-template/$', views.create_chord_template),
     url(r'^update-setlist/$', views.update_setlist),
+    url(r'^push-setlist/$', views.push_setlist),
+    url(r'^push-setlist-decision/$', views.push_setlist_decision),
     url(r'^setlist/$', views.setlist),
     # url(r'^captcha/', include('captcha.urls')),
     url(r'^testchord/$', views.chord_html), 
@@ -65,6 +70,8 @@ urlpatterns = patterns('',
     url(r'^lyrics/$', views.lyrics_to_text),
     # url(r'^send-setlist-to-archive/$', views.archive_setlist),
     url(r'^archived-setlist/$', views.display_archived_setlist),
+    url(r'^song-usage-details-profile/$', views.song_usage_details_profile),
+    url(r'^song-usage-details-ministry/$', views.song_usage_details_ministry),
     
     # url(r'^suggest/$', views.suggestion),
     

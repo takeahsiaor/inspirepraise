@@ -1,17 +1,20 @@
 # Create your views here.
 # ooga booga
+import time
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
 from songs.forms import ContactForm, BookForm, SongForm, AuthorForm, PublisherForm, BookChapterForm, BasicForm
 from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm, SearchVerseForm, InviteForm
+from songs.forms import MinistryEditForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
-# from songs.models import SetlistArchive
-from songs.models import Setlist, SetlistSong
+from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
 from django.contrib.auth.models import User
-from django.db.models import Sum, Q
+from django.contrib import messages
+from django.db.models import Sum, Q, F
 from django.contrib.auth import login, authenticate, logout #these are functions
 from django.contrib.auth import views #these are views
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
@@ -24,7 +27,7 @@ from haystack.query import SearchQuerySet, RelatedSearchQuerySet
 from difflib import get_close_matches
 from songs.functions import parse_string_to_verses, test_parsable, force_int, check_song, transpose
 from songs.functions import get_song_info_from_link, save_songs_from_dict, link_song_to_verses
-from songs.functions import make_key_option_html, convert_setlist_to_string
+from songs.functions import make_key_option_html, convert_setlist_to_string, get_md5_hexdigest, get_global_key_stats
 from bs4 import BeautifulSoup
 import urllib2, string, re, pickle, os, json
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -38,10 +41,6 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus.flowables import KeepTogether, Spacer, PageBreak
-
-
-#future concerns
-
 
 #globals for reportlab
 #------------------------------------------------------
@@ -155,7 +154,7 @@ def chord_html(request):
                         current_setlist = request.session['current_setlist']
                         setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
                         song_notes_string = setlist_song.notes
-                        print song_notes_string
+                        # print song_notes_string
                         if song_notes_string:
                             song_notes_lines = song_notes_string.split('\n')
                             html += '<br><h5>Song Notes:</h5>'
@@ -555,16 +554,30 @@ def chord_pdf(request):
         # c.save()
     c.save()
     return response
-
+    
+def display_push_setlist(request, **kwargs):
+    """
+    after login, look for setlists that are pushed.
+    """
+    print 'display_push_setlist'
+    user = request.user
+    profile, profile_created = Profile.objects.get_or_create(user=user)
+    pushed_setlist = Setlist.objects.filter(profile=profile, pushed=True)
+    if pushed_setlist: #perhaps later this can be tuple containing pushed setlists instead of boolean
+        request.session['pushed_setlist'] = pushed_setlist
+    else:
+        request.session['pushed_setlist'] = None
+    return
+    
 def retrieve_setlist(request, **kwargs):
     """
     after login, this will retrieve the text set list from the database
     parse the text into a list of ccli then populate it into the session
     """
-    user = User.objects.get(id=request.user.id)
+    user = request.user
     #attempt to fix the logging in of created superuser and having no profile
     profile, profile_created = Profile.objects.get_or_create(user=user)
-    current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False)
+    current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False, pushed=False)
     print setlist_created
     request.session['current_setlist'] = current_setlist
     if setlist_created: #new setlist object therefore no setlist order
@@ -588,18 +601,16 @@ def retrieve_setlist(request, **kwargs):
             request.session['setlist'] = []
         return 
     
-
-    
 def login_on_activation(sender, user, request, **kwargs):
     """Logs in the user after activation"""
-    user.backend = 'django.contrib.auth.backends.ModelBackend'
+    user.backend = 'django.contrib.auth.backends.ModelBackend' 
     login(request, user)
-    # profile = Profile.objects.get_or_create(user=user)
+
 # Registers the function with the django-registration user_activated signal
 user_activated.connect(login_on_activation)
 # after the logged in signal is sent, will call retreive_setlist
 user_logged_in.connect(retrieve_setlist)
-
+user_logged_in.connect(display_push_setlist)
 
 #login url comes here. checks for remember me option then sends off to 
 #default django login view
@@ -610,21 +621,15 @@ def login_user(request, *args, **kwargs):
     return views.login(request, *args, **kwargs)
 
 
-
 @login_required
 def logout_view(request):
     #save setlist to user
-    
     setlist = []
     try:
         setlist = request.session['setlist']
     except:
-        pass
-        
+        pass   
     setlist_string = convert_setlist_to_string(setlist)    
-   
-    # user = User.objects.get(id=request.user.id)
-    # user.profile_set.update(setlist = setlist_string)
     logout(request)
     return HttpResponseRedirect(reverse('songs.views.home'))
 
@@ -633,6 +638,9 @@ def forbidden(request):
     return render(request, '403.html')
 
 def home(request):
+    #this will update session variable in case of someone sending setlist while you are logged in
+    if request.user.is_authenticated():
+        display_push_setlist(request) 
     return render(request, 'home.html')
     
 
@@ -906,7 +914,6 @@ def lookup(request):
                 else:
                     num_old = num_old + 1
                 songs.append(song)
-            print template
             return render(request, template, {'songs':songs, 'url':url, 'num_new':num_new, 'num_old':num_old, 'popup':popup, 'query':query})
     return render(request, template, {'errors':errors, 'popup':popup})
 
@@ -941,80 +948,386 @@ def crawl_songselect(request):
         song_dict = get_song_info_from_link(url)
         song_information.append(song_dict)
 
-
     #saves song information in database
     for dict in song_information:
         save_songs_from_dict(dict)
     return HttpResponseRedirect(reverse('songs.views.success'))
-
-def send_ministry_invitation(to_emails, from_email, ministry):
+    
+    
+@login_required
+def accept_ministry_complete(request):
+   pass
+    
+   
+def accept_ministry_invitation(request):
+    """
+    Email link sends user here. 
+    """
+    #potentially send to congratulations screen or welcome screen, rather than profile
+    try: #verifies correct code and ministry stuff and makes sure user exists
+        username = request.GET.get('code')
+        ministry_id = request.GET.get('min')
+        ministry = Ministry.objects.get(id=ministry_id)
+        user = User.objects.get(username=username)
+        invitation = Invitation.objects.filter(email=user.email, ministry=ministry)
+    except:#if not, then just send to forbidden
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    if invitation: #if user and ministry exists, check if there is an invitation present for that person
+        msg = "Congrats! You're now a part of the %s ministry group! Jump up and down!" % ministry.name
+        messages.success(request, msg)
+        if not user.is_active:#this means its user's first time logging in
+            messages.success(request, "Remember to change your password when you get a chance!")
+            user.is_active = True
+            user.save()
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.save()
+        membership = MinistryMembership(member=profile, ministry=ministry, active=True)
+        membership.save()
+        invitation.delete()
+        return HttpResponseRedirect(reverse('songs.views.profile'))
+    else:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+        
+def send_ministry_invitation(recipient, password, from_email, ministry):
+    user = recipient
     subject = "Invitation to " + ministry.name + " InspirePraise group"
-    message = "You've been invited to join the " + ministry.name + " InspirePraise group by " + from_email + ".\
-        By joining, you'll have access to setlists shared by other members of this ministry and access \
-        to all the chords and key transpositions! Click the following link to join: www.inspirepraise.com/join"
-    send_mail(subject, message, 'ron@onelivinghope.com', to_emails)
+    to_email = user.email
+    context = {'ministry':ministry, 'user':user, 'password':password, 'from_email':from_email}
+    message = render_to_string('invitation_email.txt', context)
+    
+    send_mail(subject, message, 'ron@onelivinghope.com', (to_email,))
 
     
 @login_required
 def invite_to_ministry(request, ministry_code):
+    #PROTECT AGAINST INVITING EXISTING MEMBERS
     ministry = Ministry.objects.get(id=ministry_code)
     members = Profile.objects.filter(ministries=ministry) #members is queryset of profile objects that are part of ministry
-    current_user = User.objects.get(id=request.user.id)
+    current_user = request.user
     profile = Profile.objects.get(user=current_user)
     try:
         membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))    
-    
     if request.method == "POST":
         form = InviteForm(request.POST)
         if form.is_valid():
             raw_email_string = request.POST['emails']
             email_list = raw_email_string.split(',')
-            emails = []
+            sent = [] #gather emails that will be sent
+            already_invited = [] #gather emails that have already been invited
             for email in email_list:
-                emails.append(email.strip())
-            sender = current_user.email
-            send_ministry_invitation(emails, sender, ministry)
-            return HttpResponseRedirect(reverse('songs.views.success'))
+                email = email.strip()
+                #test for invitations already issued
+                try:
+                    invite = Invitation.objects.get(email=email, ministry=ministry)
+                except:
+                    invite = None                    
+                if invite:
+                    already_invited.append(email)
+                    continue
+                #test if user already exists. if so, then just send invitation no need to create user.
+                try:
+                    user = User.objects.get(email=email)
+                    password = ''
+                except:
+                    #create new user if none exists
+                    username = get_md5_hexdigest(email)
+                    password = username[:10]
+                    user = User(username=username, email=email, is_active=False)
+                    user.set_password(password)
+                    user.save()
+                #create invitation
+                invite = Invitation(email=email, ministry=ministry)
+                invite.save()
+                sender = current_user.email
+                #send email
+                send_ministry_invitation(user, password, sender, ministry)
+                sent.append(email)
+            if sent:
+                msg_for_sent = 'Invitations have been sent to the following addresses: ' + ' ,'.join(sent)
+                messages.success(request, msg_for_sent)
+            if already_invited:
+                msg_for_already_invited = 'These people have already been invited: ' + ' ,'.join(already_invited)
+                messages.warning(request, msg_for_already_invited)            
+            url = '/ministry/'+str(ministry.id)
+            return HttpResponseRedirect(url)
     else:
         form = InviteForm()
     return render(request, 'invite_to_ministry.html', {'form':form,'ministry':ministry})
-    
 
+@login_required
+def ministry_admin_rights(request):
+    """
+    Currently gives ministry admin rights to selected members
+    Can change this to also revoke
+    """
+    ministry_id = request.GET.get('ministry_id')
+    ministry = Ministry.objects.get(id=ministry_id)
+    current_user = request.user
+    profile = Profile.objects.get(user=current_user)
+    try:
+        membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
     
+    membership_ids = request.GET.get('membership_ids')[:-1] #string of id numbers
+    if not membership_ids:
+        return HttpResponseRedirect(reverse('songs.views.success')) #no users selected
+    
+    membership_ids = membership_ids.split(',') # convert string to list
+    memberships = MinistryMembership.objects.filter(id__in=membership_ids)
+        
+    if 'give' in request.GET:
+        print 'give admin rights!'
+        memberships.update(admin=True)
+        admin_emails = []
+        for membership in memberships:
+            admin_emails.append(membership.member.user.email)
+        message = "Admin rights have been successfully given to the following users: " + ', '.join(admin_emails)
+        messages.success(request, message)
+        return HttpResponseRedirect(reverse('songs.views.success'))
+    
+    if 'revoke' in request.GET:
+        print 'revoke admin rights!'
+        memberships.update(admin=False)
+        revoked_admin_emails = []
+        for membership in memberships:
+            revoked_admin_emails.append(membership.member.user.email)
+        message = "Admin rights have been successfully revoked from the following users: " + ', '.join(revoked_admin_emails)
+        messages.success(request, message)
+        return HttpResponseRedirect(reverse('songs.views.success'))
+        
 @login_required
 def ministry_profile(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
-    members = Profile.objects.filter(ministries=ministry) #members is queryset of profile objects that are part of ministry
-    current_user = User.objects.get(id=request.user.id)
+    members_memberships = MinistryMembership.objects.filter(ministry=ministry) #queryset of membership objects
+    current_user = request.user
     profile = Profile.objects.get(user=current_user)
     try:
         membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
-    
-    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'members':members})
+    admins = MinistryMembership.objects.filter(ministry=ministry, admin=True)
+    common_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-times_used')[:10]
+    recent_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-last_used')[:5]
+    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'admins':admins,
+        'members_memberships':members_memberships, 'common_songs':common_songs,'recent_songs':recent_songs,})
 
 @login_required
-def leave_ministry_confirm(request, ministry_code):
+def edit_ministry(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
-    return render(request, 'leave_ministry_confirm.html', {'ministry':ministry})
+    members_memberships = MinistryMembership.objects.filter(ministry=ministry) #queryset of membership objects
+    current_user = request.user
+    profile = Profile.objects.get(user=current_user)
+    try:
+        membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+        
+    if request.method =="POST":
+        form = MinistryEditForm(request.POST)
+        # form.add_ministry(request.POST.get('ministry_code'))
+        if form.is_valid():
+            ministry.address = request.POST.get('address')
+            ministry.city = request.POST.get('city')
+            ministry.state_province = request.POST.get('state_province')
+            ministry.country = request.POST.get('country')
+            # print ministry.address
+            # print ministry.city
+            # print ministry.state_province
+            # print ministry.country
+            ministry.save()
+            msg = "Ministry update successful!"
+            messages.success(request, msg)
+            #should this direct back to the edit screen or profile or success page?
+            #pretty bad way of doing it but no other ideas
+            url = '/ministry/'+str(ministry.id)
+            # return HttpResponseRedirect(reverse('songs.views.profile'))
+            return HttpResponseRedirect(url)
+    else:
+        form = MinistryEditForm(initial={'address': ministry.address, 'city': ministry.city,
+            'state_province':ministry.state_province, 'country':ministry.country})
+    return render(request, 'edit_ministry.html', {'form':form, 'ministry':ministry})
 
+@login_required
+def delete_ministry(request, ministry_code):
+    """
+    handles the deletion of a ministry provided user has appropriate rights
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    ministry = Ministry.objects.get(id=ministry_code)
+    try:
+        membership = MinistryMembership.objects.get(member=profile, ministry=ministry)
+        if not membership.admin:
+            return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    except:
+        return HttpResponseRedirect(reverse('songs.views.forbidden'))
+    ministry.delete()
+    # print "i'm deleting the following ministry"
+    # print ministry
+    msg = "%s ministry successfully deleted!" % ministry.name
+    messages.success(request, msg)
+    return HttpResponseRedirect(reverse('songs.views.profile'))
+    
 @login_required
 def leave_ministry(request, ministry_code):
-    pass
+    """
+    Accessed via AJAX. Will be sent get parameters ministry_id
+    Handles deletion of membership of current user in ministry
+    If last member of ministry, delete ministry as well.
+    If not the last member and has admin, transfer admin rights
+    """
+    #get number of members in ministry
+    ministry = Ministry.objects.get(id=ministry_code)
+    number_of_members = MinistryMembership.objects.filter(ministry=ministry).count()
+    print number_of_members
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    membership = MinistryMembership.objects.get(member=profile, ministry=ministry)
+    admin = membership.admin
+    membership.delete()
+    messages.success(request, "You've successfully left the "+ministry.name+" ministry!")
+    if number_of_members == 1: #you're the last one, 
+        print 'deleted ministry here!'
+        ministry.delete()
+        messages.success(request, "Since you were the last member, the ministry was deleted. Cleanin' house baby!")
+    elif admin: #if more than 1 member and you are admin, transfer rights
+        print 'transfer admin rights'
+        earliest_member = MinistryMembership.objects.filter(ministry=ministry).order_by('join_date')[0]
+        earliest_member.admin = True
+        earliest_member.save()
+        messages.success(request, "Since you were an admin, your rights were transferred to another member.")
+    
+    return HttpResponseRedirect(reverse('songs.views.profile'))
 
+#a lot of repeated code between details for ministry and details for profile. refactor!
+@login_required
+def song_usage_details_ministry(request):
+    """
+    This handles the logic for generation of html to display usage stats for a given ccli
+    """
+    ministry_id = request.GET.get('ministry_id')
+    ccli = request.GET.get('ccli')
+    ministry = Ministry.objects.get(id=ministry_id)
+    song = Song.objects.get(ccli=int(ccli))
+    
+    ministrysong = MinistrySong.objects.get(ministry=ministry, song=song)
+    
+    #get all details for every time song was done for keys
+    details = MinistrySongDetails.objects.filter(ministrysong=ministrysong).order_by('-date')
+    key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
+    key_list = list(key_list) #need to convert it to list otherwise count won't work later
+    total = len(key_list)
+    distinct_keys = sorted(list(set(key_list)))
+    key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
+    for distinct_key in distinct_keys:
+        number = key_list.count(str(distinct_key))
+        percent = number/float(total) * 100
+        percent = '%.2f' % percent #convert to string and truncate to two decimal places
+        key_percentage_list.append((distinct_key,percent))       
+        
+    start = time.clock()
+    global_key_percentage_list = get_global_key_stats(song)
+    elapsed = time.clock() - start
+    
+    #only get details of only last 5 usage instances
+    #gets song context for each of the ministrysongdetails in terms of song titles
+    details = details[:5]
+    song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+    for detail in details:
+        raw_song_contexts = []
+        context_string = detail.song_context
+        context_list = context_string.split(',')
+        for ccli_key in context_list:
+            ccli_key = ccli_key.split('-')
+            ccli = ccli_key[0]
+            key = ccli_key[1]
+            title = Song.objects.get(ccli=int(ccli)).title
+            partial_str = title + ' ('+key+')'
+            raw_song_contexts.append(partial_str)
+        full_str = ', '.join(raw_song_contexts)
+        song_contexts.append(full_str)
+    
+    #zip of Latest 5 ProfileSongDetails and strings of song title and key
+    details_contexts = zip(details, song_contexts)
+    # print song_contexts
+    print elapsed
+    return render(request, 'format_as_html.html', {'song':song, 'ministrysong':ministrysong, 
+        'details_contexts':details_contexts, 'percentages':key_percentage_list, 
+        'global_percentages':global_key_percentage_list, 'song_stats_details_ministry':True})
+        
 @login_required
 def profile(request):
-    user = User.objects.get(id=request.user.id)        
+    user = request.user      
     #attempt to fix the logging in of created superuser and having no profile
     profile = Profile.objects.get(user=user)
-    return render(request, 'profile.html', {'profile': profile})
+    common_songs = ProfileSong.objects.filter(profile=profile).order_by('-times_used')[:10]
+    recent_songs = ProfileSong.objects.filter(profile=profile).order_by('-last_used')[:5]
+    return render(request, 'profile.html', {'profile': profile, 'common_songs':common_songs, 'recent_songs':recent_songs})
 
 @login_required
+def song_usage_details_profile(request):
+    """
+    This handles the logic for generation of html to display usage stats for a given ccli
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    ccli = request.GET.get('ccli')
+    song = Song.objects.get(ccli=int(ccli))
+    profilesong = ProfileSong.objects.get(profile=profile, song=song)
+    
+    #get all details for every time song was done for keys
+    details = ProfileSongDetails.objects.filter(profilesong=profilesong).order_by('-date')
+    key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
+    key_list = list(key_list) #need to convert it to list otherwise count won't work later
+    total = len(key_list)
+    distinct_keys = sorted(list(set(key_list)))
+    key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
+    for distinct_key in distinct_keys:
+        number = key_list.count(str(distinct_key))
+        percent = number/float(total) * 100
+        percent = '%.2f' % percent #convert to string and truncate to two decimal places
+        key_percentage_list.append((distinct_key,percent))       
+        
+    start = time.clock()
+    global_key_percentage_list = get_global_key_stats(song)
+    elapsed = time.clock() - start
+    
+    #only get details of only last 5 usage instances
+    #gets song context for each of the profilesongdetails in terms of song titles
+    details = details[:5]
+    song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+    for detail in details:
+        raw_song_contexts = []
+        context_string = detail.song_context
+        context_list = context_string.split(',')
+        for ccli_key in context_list:
+            ccli_key = ccli_key.split('-')
+            ccli = ccli_key[0]
+            key = ccli_key[1]
+            title = Song.objects.get(ccli=int(ccli)).title
+            partial_str = title + ' ('+key+')'
+            raw_song_contexts.append(partial_str)
+        full_str = ', '.join(raw_song_contexts)
+        song_contexts.append(full_str)
+    
+    #zip of Latest 5 ProfileSongDetails and strings of song title and key
+    details_contexts = zip(details, song_contexts)
+    # print song_contexts
+    print elapsed
+    return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
+        'details_contexts':details_contexts, 'percentages':key_percentage_list, 
+        'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})
+    
+@login_required
 def edit_profile(request):
-    user = User.objects.get(id=request.user.id)
+    user = request.user
     profile = user.profile_set.get(user=user)
     if request.method =="POST":
         form = ProfileForm(request.POST)
@@ -1023,28 +1336,13 @@ def edit_profile(request):
             user.first_name = request.POST.get('first_name')
             user.last_name = request.POST.get('last_name')
             user.save()
-
-            #could be improved: will try to add ministry based on code
-            #if code is invalid, reload form and page with custom error message just passed as context
-            #not actually error associated with form i.e. form.errors but just context variable
-            try:
-                ministry = Ministry.objects.get(id=request.POST.get('ministry_code'))
-                profile.ministries.add(ministry)
-            except:
-                form = ProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name})
-                #if ministry code is entered but invalid, throw error
-                if request.POST.get('ministry_code'):
-                    return render(request, 'edit_form.html', {'form':form, 'title':'Edit Profile', 'header1':'Edit Profile',
-                        'profile':True, 'profile': profile, 'error':'Invalid Ministry Code',})
-                #if no ministry code, just redisplay
-                else:
-                    return HttpResponseRedirect(reverse('songs.views.edit_profile'))
+            msg = "Profile update successful!"
+            messages.success(request, msg)
             #should this direct back to the edit screen or profile or success page?
-            return HttpResponseRedirect(reverse('songs.views.edit_profile'))
+            return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = ProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name})
-    return render(request, 'edit_form.html', {'form':form, 'title':'Edit Profile', 'header1':'Edit Profile',
-        'profile':True, 'profile': profile})
+    return render(request, 'edit_profile.html', {'form':form})
 
 def contact(request):
     if request.method =='POST':
@@ -1076,12 +1374,12 @@ def update_num_tags(request, num_songs, num_verses):
     Accepts the HTTP request, the number of songs, and the number of verses tagged
     """
     #gets the user object
-    user = User.objects.get(id = request.user.id)
+    user = request.user
     profile = user.profile_set.get(user = user)
     num_song_tags = profile.num_song_tags + num_songs
     num_verse_tags = profile.num_verse_tags + num_verses
     user.profile_set.update(num_song_tags = num_song_tags, num_verse_tags = num_verse_tags)
-    return
+    return HttpResponseRedirect(reverse('songs.views.success'))
 
 
 #could factor out to be more general for sermon passages to song links
@@ -1155,10 +1453,12 @@ def add_ministry(request):
         form = MinistryForm(request.POST)
         if form.is_valid():
             ministry = form.save()
-            user = User.objects.get(id = request.user.id)
+            user = request.user
             profile = Profile.objects.get(user=user)
             membership = MinistryMembership(member=profile, ministry=ministry, active=True, admin=True)
             membership.save()
+            msg = "%s ministry successfully created! You are the only current admin!" % ministry.name
+            messages.success(request, msg)
             return HttpResponseRedirect(reverse('songs.views.profile'))
     else:
         form = MinistryForm()
@@ -1240,7 +1540,6 @@ def search_all(request):
         songs = paginator.page(1)
     except EmptyPage:
         songs = paginator.page(paginator.num_pages)
-    print songs
     keylist = []
     for song in songs:
         key = get_chordpro_key(song)
@@ -1408,14 +1707,156 @@ def get_chordpro_key(song):
     except:
         return ''
         
+def push_setlist_decision(request):
+    """
+    This is the view to handle acceptance and rejection of a pushed setlist
+    Accepts setlist id. If accept, archive current setlist and change pushed setlist to current
+    Then change pushed setlist push to false
+    If reject, delete pushed setlist and setlist songs
+    """
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    current_setlist = request.session['current_setlist']
+    
+    if 'accept' in request.GET:
+        print 'accept'
+        setlist_id = request.GET.get('accept')
+        #archive current setlist if there are songs in the setlist
+        if current_setlist.song_order:
+            current_setlist.archived = True
+            current_setlist.save()
+        else:#if no songs, then just delete it
+            current_setlist.delete()
+        accepted_setlist = Setlist.objects.get(id=setlist_id)
+        accepted_setlist.pushed = False
+        accepted_setlist.save()
+        request.session['current_setlist'] = accepted_setlist
+        #convert setlist to song-key tuple
+        #can factor this out of here and 'retrieve_setlist' later!
+        setlist_text = accepted_setlist.song_order
+        ccli_list = setlist_text.split(',')
+        temp_list = []
+        for tuple_str in ccli_list:
+            tuple = tuple_str.split('-')
+            ccli = tuple[0]
+            key = tuple[1]
+            temp_list.append((ccli,key))
+        request.session['setlist'] = temp_list
+        num_of_songs = str(len(temp_list))
 
+    elif 'reject' in request.GET:
+        print 'reject'
+        setlist_id = request.GET.get('reject')
+        rejected_setlist = Setlist.objects.get(id=setlist_id)
+        rejected_setlist_songs = SetlistSong.objects.filter(setlist=rejected_setlist)
+        rejected_setlist_songs.delete()
+        rejected_setlist.delete()
+        num_of_songs = ''
+
+    #checks if there are remaining pushed setlists and updates session variable accordingly
+    pushed_setlist = Setlist.objects.filter(profile=profile, pushed=True)
+    #if there are still pushed setlists, then response will be True to keep the window open
+    #if no pushed setlists, then response is false to destroy window
+    if pushed_setlist:
+        request.session['pushed_setlist'] = pushed_setlist
+        return HttpResponse(num_of_songs +'|True')
+    else:
+        request.session['pushed_setlist'] = None 
+        return HttpResponse(num_of_songs + '|False')
+
+        
+def push_setlist(request):
+    """
+    This is the view to handle sharing setlists with other members of ministry
+    Should be handled through AJAX i think then display success notification popup
+    For now, it immediately saves new setlist and new setlists songs even if it's not accepted.
+    Slower to push, faster to accept then. 
+    """
+    #on login signal, checks if there's a setlist that has push field as true, if so then give a message or
+    #new screen asking if they want to accept. session variable??
+    start = time.clock()
+    current_setlist = request.session['current_setlist']
+    user = request.user #CAN GET USER OBJECT DIRECTLY FROM REQUEST!!!
+    current_profile = Profile.objects.get(user=user)
+
+    #is it better to iterate through queryset or do initial load to list: list(queryset)
+    current_setlist_songs = SetlistSong.objects.filter(setlist=current_setlist)
+    
+    ministry_id = request.GET.get('ministry_id')
+    save_stats = request.GET.get('save_stats')
+    #normalize jquery boolean to python boolean
+    if save_stats == 'true':
+        save_stats = True
+    else:
+        save_stats = False
+    
+    #save song popularity here
+    setlist_as_tuples = request.session['setlist']
+    ccli_list = []
+    for ccli_key in setlist_as_tuples:
+        ccli_list.append(ccli_key[0])
+    songs_queryset = Song.objects.filter(ccli__in=ccli_list)
+    songs_queryset.update(popularity=F('popularity') +1) # uses F expression to increment popularity value
+   
+    if save_stats: #save songs to profile will always save to profile no matter what
+        for setlistsong in current_setlist_songs:
+            #for each song, test if there exists a profilesong object already
+            profilesong, created = ProfileSong.objects.get_or_create(profile=current_profile, song=setlistsong.song)
+            profilesong.times_used = profilesong.times_used + 1
+            profilesong.save()
+            # print profilesong.profile, profilesong.song, profilesong.times_used
+            profilesongdetails = ProfileSongDetails(profilesong=profilesong, key=setlistsong.key, 
+                song_context=current_setlist.song_order)
+            profilesongdetails.save()
+            # print profilesongdetails.key, profilesongdetails.from_setlist
+            
+    if ministry_id == "none" or ministry_id == None: #Not sending to any ministries
+        print 'i did not send anything'
+        return HttpResponseRedirect(reverse('songs.views.success'))
+    
+    #only continues here if there is some ministry to send to 
+    ministry = Ministry.objects.get(id=ministry_id)
+    if save_stats: #sending to ministry, save songs to ministry
+        for setlistsong in current_setlist_songs:
+            ministrysong, created = MinistrySong.objects.get_or_create(ministry=ministry, song=setlistsong.song)
+            ministrysong.times_used = ministrysong.times_used + 1
+            ministrysong.save()
+            # print ministrysong.ministry, ministrysong.song, ministrysong.times_used
+            ministrysongdetails = MinistrySongDetails(ministrysong=ministrysong, key=setlistsong.key, 
+                song_context=current_setlist.song_order)
+            # print ministrysongdetails.key, ministrysongdetails.from_setlist
+            ministrysongdetails.save()
+            
+    print 'i sent something'
+    memberships = MinistryMembership.objects.filter(ministry=ministry)
+    for membership in memberships:
+        profile = membership.member
+        #prevent setlist push to self
+        if profile == current_profile:
+            continue
+        #copy current_setlist
+        new_setlist = Setlist(profile=profile, notes=current_setlist.notes, created_by=ministry.name, 
+            song_order=current_setlist.song_order, pushed=True)
+        new_setlist.save()
+        #copy setlist_songs
+        for setlist_song in current_setlist_songs:
+            new_setlist_song = SetlistSong(setlist=new_setlist, song=setlist_song.song, notes=setlist_song.notes,
+                key=setlist_song.key, capo_key=setlist_song.capo_key, order=setlist_song.order)
+            new_setlist_song.save()
+    elapsed = time.clock() - start
+    print elapsed
+    return HttpResponseRedirect(reverse('songs.views.success'))
     
 def setlist(request):
     """
     handles display of setlist
     """
     #common section
-    setlist_as_list = request.session['setlist'] #just a list of tuples
+    try: # makes sure structure is in place if no songs are in setlist and not logged in
+        setlist_as_list = request.session['setlist'] #just a list of tuples
+    except:
+        setlist_as_list = []
+        request.session['setlist'] = []
     keylist = []
     song_list = [] #list of Song objects
     
@@ -1436,62 +1877,40 @@ def setlist(request):
     #authenticated section
     #gets more functionality: notes for setlist, persistent order, created by, archive, order in song, capo key, song notes
     if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        ministries = MinistryMembership.objects.filter(member=profile)
         current_setlist = request.session['current_setlist'] #setlist object
-        setlist_song_list = [] #list of SetlistSongs
-
+        setlistsong_list = [] #list of SetlistSongs
+        profilesong_list = []
         for song in song_list:
-            setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
-            setlist_song_list.append(setlist_song)    
-        
+            setlistsong = SetlistSong.objects.get(setlist=current_setlist, song=song)
+            setlistsong_list.append(setlistsong)
+            #get the last time this song was done through profilesong
+            try:
+                profilesong = ProfileSong.objects.get(profile=profile, song=song)
+                profilesong_list.append(profilesong)
+            except:
+                profilesong_list.append(None)
+
         #final packaging dependent on logged in or not, logged in will give setlist_song_option_list, not logged in song_option_list
         song_optionlist = []
-        song_optionlist_setlistsong = zip(song_list, option_list, setlist_song_list)
+        song_optionlist_setlistsong = zip(song_list, option_list, setlistsong_list, profilesong_list)
+        #get profile and all ministries person is a part of
+        
     else:        
         song_optionlist_setlistsong = []
         song_optionlist = zip(song_list, option_list)
+        
     #refactor this since i don't need both song_optionlist_setlistsong and song_optionlist    
     if request.user.is_authenticated():
         return render(request, 'setlist.html', {'title':'My Setlist', 
-            'song_optionlist_setlistsong':song_optionlist_setlistsong, 'current_setlist':current_setlist})
+            'song_optionlist_setlistsong':song_optionlist_setlistsong, 'current_setlist':current_setlist,
+            'ministries':ministries})
     else:
         return render(request, 'setlist.html', {'title':'My Setlist', 'song_optionlist':song_optionlist})
         
-    # songlist = []
-    # keylist = []
-    # for ccli_tuple in setlist:
-        # song = Song.objects.get(ccli=int(ccli_tuple[0]))
-        # songlist.append(song)
-        # # key = get_chordpro_key(song)
-        # key = ccli_tuple[1]
-        # keylist.append(key)
-    # #make option list for each song
-    # option_list = []
-    # for key in keylist:
-        # option_html = make_key_option_html(key)
-        # option_list.append(option_html)
-        
-    # song_and_key_option_list = zip(songlist, option_list)
-    #add getting of chordpro key to give to context
-    # return render(request, 'setlist.html', {'title':'My Setlist', 'song_and_key_option_list':song_and_key_option_list})
 
-# def modal_archive_setlist(request):
-    # id = request.GET.get('setlist_id')
-    # archive_setlist = SetlistArchive.objects.get(pk=int(id))
-    # setlist_song_key = archive_setlist.setlist.split(',')
-    # archive_setlist_songlist = [] #list of actual song objects
-    # archive_setlist_keylist = []
-    
-    # for sk in setlist_song_key:
-        # sk_list = sk.split('-')
-        # ccli = sk_list[0]
-        # key = sk_list[1]
-        # song = Song.objects.get(ccli=ccli)
-        # archive_setlist_songlist.append(song)
-        # archive_setlist_keylist.append(key)
-    
-    # setlist_song_key = zip(archive_setlist_songlist, archive_setlist_keylist)
-    # return render(request, 'format_as_option_list.html', {'archive_setlist':archive_setlist, 'setlist_song_key':setlist_song_key})
-    
 def update_setlist(request):
     """
     updates session variable to include or remove song from setlist
@@ -1513,7 +1932,7 @@ def update_setlist(request):
     reset_ccli = None #flag for determining whether to return "success" page or send to format as option list
     
     if request.user.is_authenticated(): #get all relevant variables up front?
-        user = User.objects.get(id = request.user.id)
+        user = request.user
         profile = Profile.objects.get(user=user)
         current_setlist = request.session['current_setlist']
         # setlist_as_list = request.session['setlist']
@@ -1586,7 +2005,6 @@ def update_setlist(request):
         print 'reorder'
         #common section
         csv_ccli = ccli[:-1] #sent ccli csv must be in form ccli-key,ccli-key
-        print csv_ccli
         ccli_list = csv_ccli.split(',')
         temp_list = []
         for ccli_and_key in ccli_list:
@@ -1594,7 +2012,6 @@ def update_setlist(request):
             ccli = ccli_and_key[0]
             key = ccli_and_key[1]
             temp_list.append((ccli,key))
-        print temp_list
         request.session['setlist'] = temp_list #saves new setlist
         
         #authenticated section
@@ -1665,7 +2082,6 @@ def update_setlist(request):
         #only available if logged in
         setlist_id = request.GET.get('delete')
         setlist_to_delete = Setlist.objects.get(pk=int(setlist_id))
-        print setlist_to_delete.notes
         print 'DELETED'
         setlist_to_delete.delete() #will this delete all related fields? setlistsongs? YES!
     
@@ -1752,28 +2168,12 @@ def modal_archive_setlist(request):
     return render(request, 'format_as_option_list.html', {'archive_setlist':setlist, 'setlist_songs':setlist_songs})
 
         
-    # archive_setlist = SetlistArchive.objects.get(pk=int(id))
-    # setlist_song_key = archive_setlist.setlist.split(',')
-    # archive_setlist_songlist = [] #list of actual song objects
-    # archive_setlist_keylist = []
-    
-    # for sk in setlist_song_key:
-        # sk_list = sk.split('-')
-        # ccli = sk_list[0]
-        # key = sk_list[1]
-        # song = Song.objects.get(ccli=ccli)
-        # archive_setlist_songlist.append(song)
-        # archive_setlist_keylist.append(key)
-    
-    # setlist_song_key = zip(archive_setlist_songlist, archive_setlist_keylist)
-    # return render(request, 'format_as_option_list.html', {'archive_setlist':archive_setlist, 'setlist_song_key':setlist_song_key})
-    
 @login_required
 def display_archived_setlist(request):
     """
     Handles the display of archived setlists
     """
-    user = User.objects.get(id=request.user.id)
+    user = request.user
     profile = Profile.objects.get(user=user)
     archived_setlists = Setlist.objects.filter(profile=profile, archived=True).order_by('date')
     
@@ -1809,29 +2209,6 @@ def display_archived_setlist(request):
     archived_and_titles = zip(archived_setlists, title_values)
     return render(request, 'archived_setlist.html', { 'archived_setlists':archived_setlists, 'archived_and_titles':archived_and_titles})
           
-        
-        
-    
-    # items_archived = SetlistArchive.objects.filter(profile=profile)
-    # display_values = []
-    
-    # for setlist in items_archived:
-        # #setlist in form 'ccli-key,ccli-key,ccli-key'
-        # songs_keys_list = setlist.setlist.split(',')
-        # setlist_string = ''
-        # for song_key_string in songs_keys_list:
-            # #song_key_string in form 'ccli-key'
-            # song_key = song_key_string.split('-')
-            # ccli = song_key[0]
-            # key = song_key[1]
-            # title = Song.objects.get(ccli=ccli).title
-            # setlist_string += title+' ('+key+'), '
-        # display_values.append(setlist_string[:-2]) #get rid of last commma
-    # zipped = zip(items_archived, display_values)
-
-    # return render(request, 'archived_setlist.html', {'archived_qs':items_archived, 'display_values':display_values, 'zipped':zipped})
-    
-    
     
 def push_chords_to_database(request):
     """

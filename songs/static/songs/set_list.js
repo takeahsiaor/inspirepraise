@@ -80,7 +80,7 @@ $(document).ready(function () {
         $ccli = $(this).attr('name');
         $.get('/update-setlist/', {'remove':true, 'ccli':$ccli}, function(response){
             setlist_length = setlist_length - 1;
-            $('#nav_setlistnum').text(setlist_length.toString());
+            $('.nav_setlistnum').text(setlist_length.toString());
         });    
         $(this).closest('li').slideUp(function(){
             $(this).remove();
@@ -99,6 +99,31 @@ $(document).ready(function () {
         $.get('/update-setlist/', {'reset':$reset_ccli, 'ccli':ccli_str}, function(response){
             $('#'+$reset_ccli+'-transpose').html(response);
             $('#refresh-chords').trigger('click');
+        });
+    });
+    
+    //everytime you open up the publish modal, reset the options
+    $('.publish-button').click(function(){
+        $('#save-usage-stats').prop('checked', false);
+        $('#send-to-none').prop('checked', true);
+    });
+    
+    //this is when you click the ok button in the publish modal
+    $('.share-setlist').click(function(){
+        ministry_id = $('input[name=ministryOption]:checked').val();
+        save_stats = $('#save-usage-stats').prop('checked');
+        $.pnotify({
+            title: 'Setlist Published!',
+            text: "Cool! You've just published this setlist!",
+            type: 'success',
+            delay: 3000,
+            styling: "bootstrap",
+            closer_hover: true,
+            addclass: "stack-topright",
+            stack: stack_topright,
+        });
+        $.get('/push-setlist/', {'ministry_id':ministry_id, 'save_stats':save_stats}, function(response){
+        
         });
     });
     
@@ -136,7 +161,7 @@ $(document).ready(function () {
         });
         $.get('/update-setlist/',{'archive':true}, function(response){
             setlist_length = 0;
-            $('#nav_setlistnum').text(setlist_length.toString());
+            $('.nav_setlistnum').text(setlist_length.toString());
             $('#setlist_results').empty();
             $('#testarea').empty();
             $('#setlist_results').text('No songs in setlist');
@@ -256,14 +281,14 @@ $(document).ready(function () {
             $('#'+$ccli+'-row').attr('class', 'song success'); //turn it green
             $('#'+$ccli+'-remove').attr('disabled', false);
             setlist_length = setlist_length + 1;
-            $('#nav_setlistnum').text(setlist_length.toString());
+            $('.nav_setlistnum').text(setlist_length.toString());
         });
     });
     
     $('#clear_setlist').click(function(){
         $.get('/update-setlist/', {'add':true, 'ccli':'clear'}, function(response){
             setlist_length = 0;
-            $('#nav_setlistnum').text(setlist_length.toString());
+            $('.nav_setlistnum').text(setlist_length.toString());
             $('#setlist_results').empty();
             $('#testarea').empty();
             $('#setlist_results').text('No songs in setlist');
@@ -277,7 +302,7 @@ $(document).ready(function () {
             $('#'+$ccli+'-add').attr('disabled', false);
             $('#'+$ccli+'-remove').attr('disabled', true);
             setlist_length = setlist_length - 1;
-            $('#nav_setlistnum').text(setlist_length.toString());
+            $('.nav_setlistnum').text(setlist_length.toString());
             // $('.song').each(function(){
                 // var $ccli = $(this).attr('id');
                 // var $in = jQuery.inArray($ccli, tagged_songs);

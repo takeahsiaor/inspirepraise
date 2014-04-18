@@ -12,9 +12,9 @@
      <script src="{% static 'songs/simple-pagination/jquery.simplePagination.js' %}"></script>
     <link href="{% static 'songs/simple-pagination/simplePagination.css'%}" rel="stylesheet" type="text/css">
 
-    <script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
-    <script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
+    <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
+    <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
     <script type="text/javascript">  
         var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
         var setlist_length = setlist.length;

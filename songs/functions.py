@@ -1,11 +1,47 @@
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author
+from songs.models import ProfileSong, ProfileSongDetails, MinistrySong, MinistrySongDetails
 from difflib import get_close_matches
 import urllib2, string, re, pickle
 from bs4 import BeautifulSoup
-
+import hashlib
 # def chord_lines_to_html(lines):
 
-
+def get_global_key_stats(song):
+    """
+    Accepts a song object and returns percentages of use for each key.
+    Compiles data from ProfileSongDetails
+    No need for MinistrySongDetails since they will always be from ProfileSongDetials
+    No chance of MinistrySongDetail being created without also creating ProfileSongDetail
+    Returns a list of tuples of form ('key','percentage')
+    """
+    global_profilesong = ProfileSong.objects.filter(song=song)
+    global_profilesongdetails = ProfileSongDetails.objects.filter(profilesong__song=song)
+    global_profile_key_list = global_profilesongdetails.values_list('key', flat=True).order_by('key')
+    global_profile_key_list = list(global_profile_key_list)
+    # global_ministrysongdetails = MinistrySongDetails.objects.filter(ministrysong__song=song)
+    # global_ministry_key_list = global_ministrysongdetails.values_list('key', flat=True).order_by('key')
+    # global_ministry_key_list = list(global_ministry_key_list)
+    
+    global_key_list = global_profile_key_list #+ global_ministry_key_list
+    
+    global_total = len(global_key_list)
+    global_distinct_keys = sorted(list(set(global_key_list)))
+    global_key_percentage_list = []
+    for global_distinct_key in global_distinct_keys:
+        number = global_key_list.count(global_distinct_key)
+        percent = number/float(global_total) * 100
+        percent = '%.2f' % percent
+        global_key_percentage_list.append((global_distinct_key, percent))
+    return global_key_percentage_list    
+        
+def get_md5_hexdigest(email):
+    """
+    Returns an md5 hash for a given email.
+    The length is 30 so that it fits into Django's ``User.username`` field.
+    """
+    if isinstance(email, str):  # for py3
+        email = email.encode('utf-8')
+    return hashlib.md5(email).hexdigest()[0:30]
 
 def convert_setlist_to_string(setlist):
     """

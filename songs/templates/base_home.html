@@ -4,12 +4,12 @@
     <title>InspirePraise {% block title %}{% endblock %}</title>
     {% load staticfiles %}
     <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
-    
-    <!-- <link href="{% static 'songs/style.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <script src="{% static 'songs/jquery-1.10.2.min.js' %}"></script> -->
+    <!-- <link href="{% static 'songs/bootstrap/css/sticky-footer.css'%}" rel="stylesheet" type="text/css"> -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="{% static 'songs/bootstrap/js/bootstrap.js' %}"></script>
     <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
+    <script src="{% static 'songs/setlist_push.js' %}"></script>   
+    <link href="{% static 'songs/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
     <style>
     html {
         overflow-y:scroll;
@@ -39,8 +39,17 @@
             </li>
             <li><a href="{% url 'songs.views.tag_verses' %}">Tag</a></li>
             <li><a href="{% url 'songs.views.lookup' %}">Add Song</a></li>
-            <li><a href="{% url 'songs.views.setlist' %}">Set List <span class="badge">{{request.session.setlist|length}}</span></a></li>
-
+            {% if user.is_authenticated %}
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Set List <span class="badge nav_setlistnum">{{request.session.setlist|length}}</span> <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="{% url 'songs.views.setlist' %}">Current Set List <span class="badge nav_setlistnum">{{request.session.setlist|length}}</span></a></li>
+                    <li><a href="{% url 'songs.views.display_archived_setlist' %}">Archived Set Lists</a></li>
+                </ul>
+            </li>
+            {% else %}
+            <li><a href="{% url 'songs.views.setlist' %}">Set List <span class="badge nav_setlistnum">{{request.session.setlist|length}}</span></a></li>
+            {% endif %}
         </ul>
         
         <ul class="nav navbar-nav navbar-right">
@@ -48,44 +57,77 @@
             <li><a href="{% url 'songs.views.login_user' %}">Login</a></li>
             <li><a href="{% url 'registration_register'%}">Register</a></li>
             {% else %}
-            <li><p style="padding-top:15px; padding-right:10px;">Welcome {{user.username}}</p></li>
+            <li><p style="padding-top:15px; padding-right:10px;">
+                Welcome <a href="{% url 'songs.views.profile' %}">{{user.email}}</a></p></li>
             <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
             {% endif %}
         </ul>
     </nav>
-
-
-
-{% if not user.is_authenticated %}
-
-        <div class="jumbotron">
-            <h1>
-            Simpler,<br>
-            Scripture-based,<br>
-            Song Selection
-            </h1>
-            <p>
-                Search through our database for songs <br>based on relevant verses. <br>
-                Signing up is easy!
-                
-                </a>
-            </p>
-            <p><a class="btn btn-primary btn-lg" role="button" href="{% url 'registration_register'%}">Sign up!</a></p>
-            
+{% if request.session.pushed_setlist %}
+    <div id="setlist-push-alert" class="alert alert-success fade in">
+        <button type="button" id="setlist-push-alert-close" class="close" data-dismiss="alert" 
+            aria-hidden="true">&times;</button>
+        <h4>Awww Yeaaah! Someone has sent you a setlist!</h4>
+        <div class="row">
+            <div class="col-md-12">
+                <p>
+                Should you choose to accept the setlist, your current setlist will be archived.
+                <br>If you reject it, you won't have the chance to get it back short of awkwardly asking the sender
+                to resend it.
+                </p>
+            </div>
         </div>
+        <ul class='list-group'>
+            {% for setlist in request.session.pushed_setlist %}
+            <li class="list-group-item list-group-item-success">
+                <div class="row">
+                <div class="col-md-9">
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{setlist.date}} - {{setlist.created_by}} 
+                            {% if setlist.notes %} - {{setlist.notes}} {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            {% for song in setlist.setlistsong_set.all %}
+                                {% if forloop.last %}
+                                    {{song.song}} ({{song.key}})
+                                {%else %}
+                                    {{song.song}} ({{song.key}}),
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-success accept-setlist" name="{{setlist.id}}">Accept</button>
+                    <button type="button" class="btn btn-default reject-setlist" name="{{setlist.id}}">Reject</button>
+                </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endif %}
+
+
+
 
 {% block content %}
 {% endblock %}
 
 
-<footer class="footer">
+<div id="footer">
     <div class='container'>
     {% block footer %}
-    <p>Copyright 2013 - InspirePraise</p>
+    <hr>
+    <div class="col-md-4">
+        <p class="text-muted">Copyright 2014 - InspirePraise</p>
+    </div>
     {% endblock %}
     </div>
-</footer>
+</div>
 
 </body>
 </html>

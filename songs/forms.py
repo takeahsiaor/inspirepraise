@@ -7,8 +7,18 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from captcha.fields import CaptchaField
-from registration.forms import RegistrationForm
+from registration.forms import RegistrationForm, RegistrationFormUniqueEmail
 from songs.functions import test_parsable
+
+
+# class PasswordChangeForm(forms.Form):
+    # original_password = 
+
+class RegistrationFormEmailAsUsername(RegistrationFormUniqueEmail):
+    def __init__(self, *args, **kwargs):
+        super(RegistrationFormUniqueEmail, self).__init__(*args, **kwargs)
+        # self.fields.pop('username')
+
 
 # class MultiEmailField(forms.Field):
     # def to_python(self, value):
@@ -124,6 +134,11 @@ class MinistryForm(forms.ModelForm):
     class Meta:
         model = Ministry
         fields = ['name', 'address', 'city', 'state_province', 'country']
+        
+class MinistryEditForm(forms.ModelForm):
+    class Meta:
+        model = Ministry
+        fields = [ 'address', 'city', 'state_province', 'country']
         
 class ProfileForm(forms.ModelForm):
     required_css_class = "required"

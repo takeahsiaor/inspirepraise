@@ -4,11 +4,19 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
-
+from django.contrib.auth.models import User
+from model_mommy import mommy
 from django.test import TestCase
-from songs.functions import transpose, convert_setlist_to_string
+from songs.functions import transpose, convert_setlist_to_string, make_key_option_html
 from songs.views import parse_string_to_verses
-from songs.models import Verse, Book, Chapter, Profile, Song
+from songs.models import Verse, Book, Chapter, Profile, Song, Setlist, SetlistSong
+
+# class MakeKeyOptionHtmlTestCase(TestCase):
+    # def test_major_key(self):
+        # key = 'G'
+        # all_major_keys = ['Ab','A','Bb','B','C', 'C#','Db','D','Eb','E','F','F#','Gb','G','G#']
+    # all_minor_keys = ['Abm','Am','Bbm','Bm','Cm', 'C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m']
+        # g_result = '<option>Ab</option><option>A</option><option>Bb</option><option>B</option><option>C</option>\
 
 
 class TransposeTestCase(TestCase):
@@ -49,17 +57,45 @@ class SongsViewsTestCase(TestCase):
         resp = self.client.get('/home/')
         self.assertEqual(resp.status_code, 200)
 
-# class UpdateSetlist(TestCase):
+class UpdateSetlistUnauth(TestCase):
     # fixtures = ['songs_views_testdata.json']
-    
     # def test_number_of_songs(self):
         # num = len(Song.objects.all())
-        # print num
         # self.assertEqual(num, 100)
+    def setUp(self):
+        pass
+        # song = mommy.make(Song)
+        # ccli = str(song.ccli)
         
-    # def test_add(self):
-        # self.assertEqual(len(setlist_as_list), 3)
-        # response = self.client.get('/update-setlist/?add=true&ccli=3798438&key=G')
+    def test_add_unauth(self):
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+        self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
+
+#test publish setlist four cases. 
+#1. send to ministry, no data save
+#2. send to ministry, with data save
+#3. don't send to any, no data
+#4. don't send to any, with data save
+#5. no ministry to send to, no data
+#6. no ministry to send to, with data save
+        
+class UpdateSetlistAuth(TestCase):       
+    def setUp(self):
+        user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        profile = Profile(user=user) 
+        
+    def test_add_auth(self):
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        user = authenticate(username='temp', password='temp')
+        current_setlist = self.client.session.get('current_setlist')
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+        self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
+        setlist_song = SetlistSong.objects.filter(setlist=current_setlist, song=song)
+        self.assertEqual(len(setlist_song), 1)
+        
 
 # class StringToVerseParseTests(TestCase):
     # """

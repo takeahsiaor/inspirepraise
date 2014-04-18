@@ -2,10 +2,20 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from songs.models import Publisher, Author, Book, Chapter, Verse, Song, SongVerses, Ministry, Profile
+from songs.models import Invitation, Setlist, SetlistSong, MinistryMembership
 
 class AuthorAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'email')
     search_fields = ('full_name',)
+    
+class InvitationAdmin(admin.ModelAdmin):
+    list_display = ('date', 'email', 'ministry')
+    ordering = ('email', 'ministry')
+
+class SetlistAdmin(admin.ModelAdmin):
+    list_display = ('profile', 'notes', 'archived')
+    ordering = ('profile',)
+    fields = ('profile', 'notes', 'created_by', 'song_order')
     
 class SongAdmin(admin.ModelAdmin):
     list_display = ('title', 'ccli', 'popularity', 'publication_year') #customized fields to display
@@ -62,4 +72,6 @@ admin.site.register(Song, SongAdmin)
 admin.site.register(Ministry, MinistryAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(SongVerses, SongVerseAdmin)
+admin.site.register(Invitation, InvitationAdmin)
+admin.site.register(Setlist, SetlistAdmin)
 #admin.site.register(SongVerses)

@@ -25,14 +25,13 @@
             <File name="songs\static\songs\dynamic_populate.js" />
             <File name="songs\static\songs\django-admin.multiselect.js" />
             <File name="songs\static\songs\simple-pagination\jquery.simplePagination.js" />
+            <File name="songs\static\songs\ministry.js" />
+            <File name="songs\static\songs\profile.js" />
             <File name="songs\static\songs\search_verses.js" />
             <File name="songs\static\songs\search_songs.js" />
             <File name="songs\static\songs\set_list.js" />
+            <File name="songs\static\songs\setlist_push.js" />
             <File name="songs\static\songs\tag_verses.js" />
-        </Folder>
-        <Folder name="Tooltip">
-            <File name="songs\static\songs\tooltip\script.js" />
-            <File name="songs\static\songs\tooltip\style.css" />
         </Folder>
         <Folder name="Shadowbox">
             <File name="songs\static\songs\shadowbox\shadowbox.css" />
@@ -48,10 +47,16 @@
             <File name="songs\templates\base_home.html" />
             <File name="songs\templates\contact_form.html" />
             <File name="songs\templates\contact_thanks.html" />
+            <File name="songs\templates\create_ministry_form.html" />
             <File name="songs\templates\edit_form.html" />
+            <File name="songs\templates\edit_profile.html" />
+            <File name="songs\templates\edit_ministry.html" />
             <File name="songs\templates\form.html" />
+            <File name="songs\templates\format_as_html.html" />
             <File name="songs\templates\format_as_option_list.html" />
             <File name="songs\templates\home.html" />
+            <File name="songs\templates\invitation_email.txt" />
+            <File name="songs\templates\invite_to_ministry.html" />
             <File name="songs\templates\leave_ministry_confirm.html" />
             <File name="songs\templates\lookup.html" />
             <File name="songs\templates\ministry_profile.html" />
@@ -82,6 +87,7 @@
                 <File name="songs\templates\registration\password_reset_subject.txt" />
                 <File name="songs\templates\registration\registration_complete.html" />
                 <File name="songs\templates\registration\registration_form.html" />
+                <File name="songs\templates\registration\password_change_form_custom.html" />
             </Folder>
         </Folder>
         <Folder name="AutoSuggest">

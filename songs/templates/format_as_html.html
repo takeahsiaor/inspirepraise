@@ -1,0 +1,141 @@
+{% if song_stats_details_profile %}
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="song-stats-label">{{song.title}} - {{profilesong.profile.user.email}}</h4>
+      </div>
+      <div class="modal-body" id="song-stats-modal-body">
+<!--         <div class="row">
+            <div class="col-md-12">
+                <dl class="dl-horizontal">
+                    <dt>Number of times used:</dt>
+                    <dd>{{profilesong.times_used}}</dd>
+                    <dt>Last used on:</dt>
+                    <dd>{{profilesong.last_used|date}}</dd>
+                </dl>
+            </div>
+        </div> -->
+        <div class="row">
+            <div class="col-md-12">
+            <ul class="list-group">
+                <li class="list-group-item list-group-item-info">
+                <strong>Dates and songs <em>{{song.title}}</em> was last used with</strong>
+                </li>
+            {% for detail, context in details_contexts %}
+                <li class="list-group-item">
+                    <div class="row">
+                    <div class="col-md-3">
+                    {{detail.date|date}}
+                    </div>
+                    <div class="col-md-9">
+                     {{context}}
+                    </div>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+            </div>
+        </div>
+        {% if percentages %}
+        <span class="help-block">Keys you've used for <em>{{song.title}}</em></span>
+        {% for key, percentage in percentages %}
+        <div class="row">
+            <div class="col-md-1">
+                <label class="pull-left">{{key}}</label>
+            </div>
+            <div class="col-md-11">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" aria-valuenow="{{percentage}}" aria-valuemin="0"
+                    aria-valuemax="100" style="width:{{percentage}}%;">{{percentage}}%</div>
+            </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% if global_percentages %}
+        <br>
+        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
+        {% for gkey, gpercentage in global_percentages %}
+        <div class="row">
+            <div class="col-md-1">
+                <label class="pull-left">{{gkey}}</label>
+            </div>
+            <div class="col-md-11">
+            <div class="progress">
+                <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="{{gpercentage}}" 
+                    aria-valuemin="0" aria-valuemax="100" style="width:{{gpercentage}}%;">{{gpercentage}}%</div>
+            </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-dismiss="modal">Done</button>
+      </div>
+{% endif %}
+{% if song_stats_details_ministry %}
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="song-stats-label">{{song.title}} - {{ministrysong.ministry.name}}</h4>
+      </div>
+      <div class="modal-body" id="song-stats-modal-body">
+
+        <div class="row">
+            <div class="col-md-12">
+            <ul class="list-group">
+                <li class="list-group-item list-group-item-info">
+                <strong>Dates and songs <em>{{song.title}}</em> was last used with</strong>
+                </li>
+            {% for detail, context in details_contexts %}
+                <li class="list-group-item">
+                    <div class="row">
+                    <div class="col-md-3">
+                    {{detail.date|date}}
+                    </div>
+                    <div class="col-md-9">
+                     {{context}}
+                    </div>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+            </div>
+        </div>
+        {% if percentages %}
+        <span class="help-block">Keys this ministry used for <em>{{song.title}}</em></span>
+        {% for key, percentage in percentages %}
+        <div class="row">
+            <div class="col-md-1">
+                <label class="pull-left">{{key}}</label>
+            </div>
+            <div class="col-md-11">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" aria-valuenow="{{percentage}}" aria-valuemin="0"
+                    aria-valuemax="100" style="width:{{percentage}}%;">{{percentage}}%</div>
+            </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% if global_percentages %}
+        <br>
+        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
+        {% for gkey, gpercentage in global_percentages %}
+        <div class="row">
+            <div class="col-md-1">
+                <label class="pull-left">{{gkey}}</label>
+            </div>
+            <div class="col-md-11">
+            <div class="progress">
+                <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="{{gpercentage}}" 
+                    aria-valuemin="0" aria-valuemax="100" style="width:{{gpercentage}}%;">{{gpercentage}}%</div>
+            </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-dismiss="modal">Done</button>
+      </div>
+{% endif %}

@@ -56,7 +56,8 @@ td{
                 id="refresh-chords">Refresh Chord Preview</button>
         </div>
         <div class="col-md-3">
-            <button type="button" class="pull-right btn btn-danger"  id="clear_setlist">Delete Set List</button>
+            <button type="button" class="pull-right btn btn-danger"  id="clear_setlist">
+                <span class="glyphicon glyphicon-trash"></span> Delete Set List</button>
         </div>
     </div>
     <br>
@@ -136,24 +137,39 @@ td{
         <div class="row">
         <div class="col-md-9">
             <button type="button" class="btn btn-default archive-setlist">Archive Setlist</button>
-            <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
-            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>        
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="#" id="download-all">Download Setlist Chords</a></li>
+                    <li><a href="#" class="download-lyrics-setlist">Download Setlist Lyrics</a></li>
+                </ul>
+            </div>
+<!--             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
+            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>       -->  
             <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
+            
+            <button type="button" class="btn btn-default {% if ministries %}publish-button{%endif%}" data-toggle="modal" 
+                data-target="#share-modal" >Publish Setlist</button>
             <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
-                id="refresh-chords">Refresh Chord Preview</button>
+                id="refresh-chords">Refresh</button>
         </div>
         <div class="col-md-3">
-           <button type="button" class="btn btn-danger pull-right"  id="clear_setlist">Delete Set List</button>
+           <button type="button" class="btn btn-danger pull-right"  id="clear_setlist">
+                <span class="glyphicon glyphicon-trash"></span> Delete Set List</button>
             <!-- <button type="button" class="btn btn-default testing">test</button> -->
         </div>
         </div>
         <br>
         <ul class="sortable list-group">
-        {% for song, option_list, setlist_song in song_optionlist_setlistsong %}
+        {% for song, option_list, setlist_song, profilesong in song_optionlist_setlistsong %}
             {% if song.chords %}
                 <li class="list-group-item" name="{{song.ccli}}">
                 <div class="row">
-                    <div class="col-md-3">{{song.title}}</div>
+                    <div class="col-md-3">{{song.title}}
+                        {% if profilesong %}<br><small><em>Last used {{profilesong.last_used|date}}</em></small>{% endif%}
+                    </div>
                     <div class="col-md-4">
                         <div class="col-md-4">
                             <select class="form-control transpose-value" name="{{song.ccli}}" 
@@ -194,6 +210,11 @@ td{
                             &times;
                         </button>
                     </div>
+                </div>
+                <div class="row">
+                <div class="col-md-3">
+                    
+                </div>
                 </div>
                 <!-- modal for each song -->
                 <div class="modal fade song-note-modal" name={{song.ccli}} id="song-note-modal-{{song.ccli}}" 
@@ -241,7 +262,75 @@ td{
             
         {% endfor %}
         </ul>
-
+        
+        <!-- modal for sharing -->
+    <div class="modal fade" id="share-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="share-modal-label">Publish Setlist</h4>
+          </div>
+          <div class="modal-body" id="share-modal-body">
+            {% if ministries %}
+                <span>
+                    You can publish this setlist to any of the following ministries:
+                </span>
+                <div class="radio">
+                    <label>
+                    <input id="send-to-none" type="radio" name="ministryOption" 
+                        value="none" checked>Don't send to any ministry
+                    </label>
+                </div>
+                {% for membership in ministries %}
+                <div class="radio">
+                    <label>
+                    {% if forloop.first %}
+                        <input type="radio" name="ministryOption" 
+                            value="{{membership.ministry.id}}">
+                    {% else %}
+                        <input type="radio" name="ministryOption" 
+                            value="{{membership.ministry.id}}">
+                    {% endif %}
+                            {{membership.ministry.name}} - {{membership.ministry.address}}, {{membership.ministry.state_province}}
+                    </label>
+                </div>
+                {% endfor %}
+                <hr>
+                <span>By clicking the checkbox below, we will record the songs and keys you've chosen in order
+                    to give you statistics on when, how often, and in what key you've chosen these songs in the past!
+                    You should only click this when you're publishing a "final" setlist.</span>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="save-usage-stats" checked>Save song usage statistics
+                    </label>
+                </div>
+            {% else %}
+                <span>
+                    By publishing this setlist, we will record the songs and keys you've chosen in order
+                    to give you statistics on when, how often, and in what key you've chosen these songs in the past!
+                    You should only publish when you have a "final" setlist.
+                </span>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="save-usage-stats" checked disabled>
+                            <span class="help-block">Save song usage statistics</span>
+                    </label>
+                </div>
+            
+            
+            {% endif %}
+            
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success share-setlist" data-dismiss="modal">Publish!</button>
+            <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    
+    
 
 
     {% else %}
