@@ -1076,17 +1076,30 @@ def ministry_admin_rights(request):
     membership_ids = request.GET.get('membership_ids')[:-1] #string of id numbers
     if not membership_ids:
         return HttpResponseRedirect(reverse('songs.views.success')) #no users selected
-        
+    
     membership_ids = membership_ids.split(',') # convert string to list
     memberships = MinistryMembership.objects.filter(id__in=membership_ids)
-    memberships.update(admin=True)
-    admin_emails = []
-    for membership in memberships:
-        admin_emails.append(membership.member.user.email)
-    message = "Admin rights have been successfully given to the following users: " + ', '.join(admin_emails)
-    messages.success(request, message)
-    return HttpResponseRedirect(reverse('songs.views.success'))
+        
+    if 'give' in request.GET:
+        print 'give admin rights!'
+        memberships.update(admin=True)
+        admin_emails = []
+        for membership in memberships:
+            admin_emails.append(membership.member.user.email)
+        message = "Admin rights have been successfully given to the following users: " + ', '.join(admin_emails)
+        messages.success(request, message)
+        return HttpResponseRedirect(reverse('songs.views.success'))
     
+    if 'revoke' in request.GET:
+        print 'revoke admin rights!'
+        memberships.update(admin=False)
+        revoked_admin_emails = []
+        for membership in memberships:
+            revoked_admin_emails.append(membership.member.user.email)
+        message = "Admin rights have been successfully revoked from the following users: " + ', '.join(revoked_admin_emails)
+        messages.success(request, message)
+        return HttpResponseRedirect(reverse('songs.views.success'))
+        
 @login_required
 def ministry_profile(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
@@ -1097,11 +1110,11 @@ def ministry_profile(request, ministry_code):
         membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
-        
+    admins = MinistryMembership.objects.filter(ministry=ministry, admin=True)
     common_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-times_used')[:10]
     recent_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-last_used')[:5]
-    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 
-        'members_memberships':members_memberships, 'common_songs':common_songs,'recent_songs':recent_songs})
+    return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'admins':admins,
+        'members_memberships':members_memberships, 'common_songs':common_songs,'recent_songs':recent_songs,})
 
 @login_required
 def edit_ministry(request, ministry_code):
@@ -1880,7 +1893,6 @@ def setlist(request):
             except:
                 profilesong_list.append(None)
 
-        print profilesong_list
         #final packaging dependent on logged in or not, logged in will give setlist_song_option_list, not logged in song_option_list
         song_optionlist = []
         song_optionlist_setlistsong = zip(song_list, option_list, setlistsong_list, profilesong_list)

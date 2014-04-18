@@ -137,8 +137,17 @@ td{
         <div class="row">
         <div class="col-md-9">
             <button type="button" class="btn btn-default archive-setlist">Archive Setlist</button>
-            <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
-            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>        
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="#" id="download-all">Download Setlist Chords</a></li>
+                    <li><a href="#" class="download-lyrics-setlist">Download Setlist Lyrics</a></li>
+                </ul>
+            </div>
+<!--             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
+            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>       -->  
             <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
             
             <button type="button" class="btn btn-default {% if ministries %}publish-button{%endif%}" data-toggle="modal" 

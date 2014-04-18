@@ -8,17 +8,32 @@ $(document).ready(function () {
         });
     });
     $('.make-admin-button').click(function(){
-        $('.admin-rights-checkbox').attr('checked', false);
+        $('.give-admin-checkbox').attr('checked', false);
     });
     
     $('#give-admin-rights-confirm').click(function(){
         ministry_id = $(this).attr('name');
         membership_ids = '';
-        $('.admin-rights-checkbox:checked').each(function(){
+        $('.give-admin-checkbox:checked').each(function(){
            membership_ids = membership_ids + $(this).attr('name') +','; 
         });
-        $.get('/give-admin-rights/', {'ministry_id':ministry_id, 'membership_ids':membership_ids}, function(response){
+        $.get('/admin-rights/', {'ministry_id':ministry_id, 'membership_ids':membership_ids, 'give':true}, function(response){
             window.location.replace("/ministry/"+ministry_id);
         });
     });
+    
+    $('.revoke-admin-button').click(function(){
+        $('.revoke-admin-checkbox').attr('checked', false);
+    });
+    
+    $('#revoke-admin-rights-confirm').click(function(){
+        ministry_id = $(this).attr('name');
+        membership_ids = '';
+        $('.revoke-admin-checkbox:checked').each(function(){
+           membership_ids = membership_ids + $(this).attr('name') +','; 
+        });
+        $.get('/admin-rights/', {'ministry_id':ministry_id, 'membership_ids':membership_ids, 'revoke':true}, function(response){
+            window.location.replace("/ministry/"+ministry_id);
+        });
+    });    
 });

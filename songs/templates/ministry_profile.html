@@ -33,8 +33,22 @@
             <span class="glyphicon glyphicon-envelope"></span> Invite to join!</a>
         <a class="btn btn-primary" href="{% url 'songs.views.edit_ministry' ministry.id %}">
             <span class="glyphicon glyphicon-cog"></span> Edit Info</a>
-        <button class="btn btn-warning make-admin-button" data-toggle="modal" data-target="#give-admin-rights"
+        <div class="btn-group">
+            <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+            Manage Admins <span class="caret"></span>
+            </button>
+        <ul class="dropdown-menu" role="menu">
+            <li><a href="#" class="make-admin-button" data-toggle="modal" data-target="#give-admin-rights"
+                name="{{ministry.id}}">Give Admin Rights</a></li>
+            <li><a href="#" class="revoke-admin-button" data-toggle="modal" data-target="#revoke-admin-rights"
+                name="{{ministry.id}}">Revoke Admin Rights</a></li>
+        </ul>
+        </div>
+        
+<!--         <button class="btn btn-warning make-admin-button" data-toggle="modal" data-target="#give-admin-rights"
             name="{{ministry.id}}">Make Admin</button>
+        <button class="btn btn-warning revoke-admin-button" data-toggle="modal" data-target="#revoke-admin-rights"
+            name="{{ministry.id}}">Revoke Admin</button> -->
 {% endif %}
         
         <button class="btn btn-danger" data-toggle="modal" data-target="#leave-ministry-confirm"
@@ -62,8 +76,13 @@
     </ul>
 </div>
 
-<p>
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+<p class="alert alert-info">
+By far the best thing about being a part of an InspirePraise ministry is the ability to 
+share setlists with other members of the ministry. With one click, your whole team can
+have access to the song order, key, chords, and any other notes you decide to include! <br><br>
+
+Also, as you continue to use InspirePraise, you can start to see statistics on what the most commonly
+used songs are for this ministry!
 </p>
 
 
@@ -161,7 +180,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
             {% if not mm.admin %}
             <div class="checkbox">
             <label>
-                <input type="checkbox" class="admin-rights-checkbox" name="{{mm.id}}">{{mm.member.user.email}}
+                <input type="checkbox" class="give-admin-checkbox" name="{{mm.id}}">{{mm.member.user.email}}
             </label>
             </div>
             {% else %}
@@ -178,6 +197,51 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
       </div>
       <div class="modal-footer">
             <button class="btn btn-success" id="give-admin-rights-confirm"
+                href="#" name="{{ministry.id}}">Confirm!</button>
+            <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-- modal for revoking admin -->
+<div class="modal fade" id="revoke-admin-rights" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="revoke-admin-rights-label">Revoke admin rights</h4>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="alert alert-info">
+            Admins can:
+            <ul>
+                <li>Change the ministry profile</li>      
+                <li>Invite other members to the ministry</li>
+                <li>Delete the ministry</li>
+            </ul>
+        </div>
+        <div class="row">
+        <div class="col-md-12">
+        {% if admins|length_is:"1"%}
+            There are no other admins for you to revoke admin rights from.
+        {% else %}
+        Select the following admins you wish to revoke admin rights from:
+            {% for admin in admins %}
+            {% if not admin.member.user.email == membership.member.user.email %}
+            <div class="checkbox">
+            <label>
+                <input type="checkbox" class="revoke-admin-checkbox" name="{{admin.id}}">{{admin.member.user.email}}
+            </label>
+            </div>
+            {% endif %}
+            {% endfor %}
+        {% endif %}
+        </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+            <button class="btn btn-success" id="revoke-admin-rights-confirm"
                 href="#" name="{{ministry.id}}">Confirm!</button>
             <button class="btn btn-default" data-dismiss="modal">Cancel</button>
       </div>
