@@ -1509,7 +1509,8 @@ def search_info(request):
         ministries = []
         for membership in memberships:
             ministries.append(membership.ministry)
-        print ministries
+    else:
+        ministries = []
         
     if 'query' in request.GET:
         # if request.GET.get('query') =='':
@@ -1555,22 +1556,58 @@ def search_info(request):
                 #this can either be the profile or a ministry object
                 stats_context = request.session['song_stats_context']
                 if stats_context == profile:
-                    print "profile context!!"
+                    profile_songs = ProfileSong.objects.select_related('song').filter(profile=stats_context,
+                        song__in=song_object_list)
+                    song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+                    for song in song_object_list:
+                        #goes through each song in the song list 
+                        found = False
+                        for profile_song in profile_songs:
+                            #goes through each ministry song to find a match
+                            if profile_song.song == song:
+                                details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
+                                song_stats.append((profile_song,details))
+                                found = True
+                        if not found:
+                            song_stats.append(None)
                 else:
-                    ministry_songs = MinistrySong.objects.filter(ministry=stats_context, song__in=song_object_list)
-                    print "ministry context!!"
-                    print ministry_songs
+                    ministry_songs = MinistrySong.objects.select_related('song').filter(ministry=stats_context,
+                        song__in=song_object_list)
+                    song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+                    for song in song_object_list:
+                        #goes through each song in the song list 
+                        found = False
+                        for ministry_song in ministry_songs:
+                            #goes through each ministry song to find a match
+                            if ministry_song.song == song:
+                                details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
+                                song_stats.append((ministry_song,details))
+                                found = True
+                        if not found:
+                            song_stats.append(None)
+                songs_keys_stats = zip(songs, option_list, song_stats)    
+            else:
+                songs_keys_stats = zip(songs, option_list)
                 
-            song_and_key_option_list = zip(songs, option_list)
-            
-            return render(request, 'search_results.html', {'songs': songs,'song_and_key_option_list':song_and_key_option_list, 'form':form, 'query':query, 
-                'by_info':True, 'ministries':ministries})
+            return render(request, 'search_results.html', {'songs': songs,'songs_keys_stats':songs_keys_stats, 
+                'form':form, 'query':query, 'ministries':ministries,})
         return render(request, 'search_form_title.html', {'form':form, 'ministries':ministries})
     form = SearchInfoForm()
     return render(request, 'search_form_title.html', {'form':form, 'ministries':ministries})
     
 
 def search_all(request):
+    #gets ministries for display in song stats context select box
+    if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        memberships = MinistryMembership.objects.select_related('ministry').filter(member=profile)
+        ministries = []
+        for membership in memberships:
+            ministries.append(membership.ministry)
+    else:
+        ministries = []
+        
     songs = SearchQuerySet().all().order_by('title')
     form = SearchInfoForm()
     
@@ -1582,10 +1619,12 @@ def search_all(request):
         songs = paginator.page(1)
     except EmptyPage:
         songs = paginator.page(paginator.num_pages)
+        
     keylist = []
+    song_object_list = []
     for song in songs:
         key = get_chordpro_key(song)
-        # key = song.original_key
+        song_object_list.append(song.object) #this is to get a listo f song objects 
         keylist.append(key)
     # print keylist
     #make option list for each song
@@ -1594,12 +1633,61 @@ def search_all(request):
     for key in keylist:
         option_html = make_key_option_html(key)
         option_list.append(option_html)
-    song_and_key_option_list = zip(songs, option_list)
+        
+    ###WORK NEEDED HERE TO IMPLEMENT LIVE SONG STATS
+    if request.user.is_authenticated():
+        #this can either be the profile or a ministry object
+        stats_context = request.session['song_stats_context']
+        if stats_context == profile:
+            profile_songs = ProfileSong.objects.select_related('song').filter(profile=stats_context,
+                song__in=song_object_list)
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in song_object_list:
+                #goes through each song in the song list 
+                found = False
+                for profile_song in profile_songs:
+                    #goes through each ministry song to find a match
+                    if profile_song.song == song:
+                        details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
+                        song_stats.append((profile_song,details))
+                        found = True
+                if not found:
+                    song_stats.append(None)
+        else:
+            ministry_songs = MinistrySong.objects.select_related('song').filter(ministry=stats_context,
+                song__in=song_object_list)
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in song_object_list:
+                #goes through each song in the song list 
+                found = False
+                for ministry_song in ministry_songs:
+                    #goes through each ministry song to find a match
+                    if ministry_song.song == song:
+                        details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
+                        song_stats.append((ministry_song,details))
+                        found = True
+                if not found:
+                    song_stats.append(None)
+        songs_keys_stats = zip(songs, option_list, song_stats)    
+    else:
+        songs_keys_stats = zip(songs, option_list)
     
-    return render(request, 'search_results.html', {'songs':songs,'song_and_key_option_list':song_and_key_option_list,  'query':'All Songs', 'form':form, 'by_title':True})
+    return render(request, 'search_results.html', {'songs':songs,'songs_keys_stats':songs_keys_stats,  
+        'query':'All Songs', 'form':form, 'ministries':ministries})
     
     
 def search_verses(request):
+    #gets ministries for display in song stats context select box
+    if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        memberships = MinistryMembership.objects.select_related('ministry').filter(member=profile)
+        ministries = []
+        for membership in memberships:
+            ministries.append(membership.ministry)
+    else:
+        ministries = []
+            
     if 'query' in request.GET:
         # if request.GET.get('query') =='':
             # return 
@@ -1624,6 +1712,7 @@ def search_verses(request):
                 songs = paginator.page(paginator.num_pages)
             
             keylist = []
+
             for song in songs:
                 key = get_chordpro_key(song)
                 # key = song.original_key
@@ -1631,21 +1720,69 @@ def search_verses(request):
             # print keylist
             #make option list for each song
             option_list = []
+
             for key in keylist:
                 option_html = make_key_option_html(key)
                 option_list.append(option_html)
-            song_and_key_option_list = zip(songs, option_list)
-            
+                
+            if request.user.is_authenticated():
+                #this can either be the profile or a ministry object
+                stats_context = request.session['song_stats_context']
+                if stats_context == profile:
+                    profile_songs = ProfileSong.objects.select_related('song').filter(profile=stats_context,
+                        song__in=songs)
+                    song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+                    for song in songs:
+                        #goes through each song in the song list 
+                        found = False
+                        for profile_song in profile_songs:
+                            #goes through each ministry song to find a match
+                            if profile_song.song == song:
+                                details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
+                                song_stats.append((profile_song,details))
+                                found = True
+                        if not found:
+                            song_stats.append(None)
+                else:
+                    ministry_songs = MinistrySong.objects.select_related('song').filter(ministry=stats_context,
+                        song__in=songs)
+                    song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+                    for song in songs:
+                        #goes through each song in the song list 
+                        found = False
+                        for ministry_song in ministry_songs:
+                            #goes through each ministry song to find a match
+                            if ministry_song.song == song:
+                                details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
+                                song_stats.append((ministry_song,details))
+                                found = True
+                        if not found:
+                            song_stats.append(None)
+                songs_keys_stats = zip(songs, option_list, song_stats)    
+            else:
+                songs_keys_stats = zip(songs, option_list)
+                
             #no longer needs just songs context element
-            return render(request, 'search_results_verses.html', {'songs': songs, 'song_and_key_option_list':song_and_key_option_list, 'form':form, 'query':query, 
-                'by_verse':True})
-        return render(request, 'search_form_verses.html', {'form':form})
+            return render(request, 'search_results_verses.html', {'songs': songs, 'songs_keys_stats':songs_keys_stats, 
+                'form':form, 'query':query, 'ministries':ministries, 'by_verse':True})
+        return render(request, 'search_form_verses.html', {'form':form, 'ministries':ministries})
     form = SearchVerseForm()
-    return render(request, 'search_form_verses.html', {'form':form})
+    return render(request, 'search_form_verses.html', {'form':form, 'ministries':ministries})
 
 #271ms 4 queries without chord display
 #778ms 4 queries with chord display
 def search_songs_with_chords(request):
+    #gets ministries for display in song stats context select box
+    if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        memberships = MinistryMembership.objects.select_related('ministry').filter(member=profile)
+        ministries = []
+        for membership in memberships:
+            ministries.append(membership.ministry)
+    else:
+        ministries = []
+        
     song_queryset = Song.objects.exclude(chords='').prefetch_related('authors', 'publisher').order_by('-popularity')
     
     paginator = Paginator(song_queryset, 20)
@@ -1660,6 +1797,7 @@ def search_songs_with_chords(request):
 
     keylist = []
 
+
     for song in songs:
         key = get_chordpro_key(song)
         keylist.append(key)
@@ -1668,9 +1806,50 @@ def search_songs_with_chords(request):
     for key in keylist:
         option_html = make_key_option_html(key)
         option_list.append(option_html)
-    song_and_key_option_list = zip(songs, option_list)    
+        
+    if request.user.is_authenticated():
+        #this can either be the profile or a ministry object
+        stats_context = request.session['song_stats_context']
+        if stats_context == profile:
+            profile_songs = ProfileSong.objects.select_related('song').filter(profile=stats_context,
+                song__in=songs)
 
-    return render(request, 'songs_with_chords.html', {'songs':songs,'song_and_key_option_list':song_and_key_option_list,  })
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in songs:
+                #goes through each song in the song list 
+                found = False
+                for profile_song in profile_songs:
+                    #goes through each ministry song to find a match
+                    print profile_song.song
+                    print song
+                    if profile_song.song == song:
+                        details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
+                        song_stats.append((profile_song,details))
+                        found = True
+                        break
+                if not found:
+                    song_stats.append(None)
+        else:
+            ministry_songs = MinistrySong.objects.select_related('song').filter(ministry=stats_context,
+                song__in=songs)
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in songs:
+                #goes through each song in the song list 
+                found = False
+                for ministry_song in ministry_songs:
+                    #goes through each ministry song to find a match
+                    if ministry_song.song == song:
+                        details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
+                        song_stats.append((ministry_song,details))
+                        found = True
+                if not found:
+                    song_stats.append(None)
+        songs_keys_stats = zip(songs, option_list, song_stats)    
+    else:
+        songs_keys_stats = zip(songs, option_list)         
+
+    return render(request, 'songs_with_chords.html', {'songs':songs,'songs_keys_stats':songs_keys_stats, 
+        'ministries':ministries})
 
 def song_info_pop(request, ccli):
     """
@@ -1893,6 +2072,7 @@ def setlist(request):
     """
     handles display of setlist
     """
+      
     #common section
     try: # makes sure structure is in place if no songs are in setlist and not logged in
         setlist_as_list = request.session['setlist'] #just a list of tuples
@@ -1916,39 +2096,65 @@ def setlist(request):
             option_html = make_key_option_html(key)
         option_list.append(option_html)
     
+    
+    
     #authenticated section
     #gets more functionality: notes for setlist, persistent order, created by, archive, order in song, capo key, song notes
     if request.user.is_authenticated():
         user = request.user
         profile = Profile.objects.get(user=user)
-        ministries = MinistryMembership.objects.filter(member=profile)
+        stats_context = request.session['song_stats_context']
+        memberships = MinistryMembership.objects.select_related('ministry').filter(member=profile)
+        ministries = []
+        for membership in memberships:
+            ministries.append(membership.ministry) 
         current_setlist = request.session['current_setlist'] #setlist object
         setlistsong_list = [] #list of SetlistSongs
-        profilesong_list = []
         for song in song_list:
             setlistsong = SetlistSong.objects.get(setlist=current_setlist, song=song)
             setlistsong_list.append(setlistsong)
-            #get the last time this song was done through profilesong
-            try:
-                profilesong = ProfileSong.objects.get(profile=profile, song=song)
-                profilesong_list.append(profilesong)
-            except:
-                profilesong_list.append(None)
+            
+        if stats_context == profile:
+            profile_songs = ProfileSong.objects.select_related('song').filter(profile=stats_context,
+                song__in=song_list)
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in song_list:
+                #goes through each song in the song list 
+                found = False
+                for profile_song in profile_songs:
+                    #goes through each ministry song to find a match
+                    if profile_song.song == song:
+                        details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
+                        song_stats.append((profile_song,details))
+                        found = True
+                if not found:
+                    song_stats.append(None)     
+        else:
+            ministry_songs = MinistrySong.objects.select_related('song').filter(ministry=stats_context,
+                song__in=song_list)
+            song_stats = [] # will be  alist of tuples of the form (ministry_song, ministry_song_details)
+            for song in song_list:
+                #goes through each song in the song list 
+                found = False
+                for ministry_song in ministry_songs:
+                    #goes through each ministry song to find a match
+                    if ministry_song.song == song:
+                        details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
+                        song_stats.append((ministry_song,details))
+                        found = True
+                if not found:
+                    song_stats.append(None)     
 
-        #final packaging dependent on logged in or not, logged in will give setlist_song_option_list, not logged in song_option_list
-        song_optionlist = []
-        song_optionlist_setlistsong = zip(song_list, option_list, setlistsong_list, profilesong_list)
-        #get profile and all ministries person is a part of
-        
-    else:        
-        song_optionlist_setlistsong = []
+        songs_keys_setlistsongs_stats = zip(song_list, option_list, setlistsong_list, song_stats)    
+    else:
+        ministries = []
         song_optionlist = zip(song_list, option_list)
         
     #refactor this since i don't need both song_optionlist_setlistsong and song_optionlist    
     if request.user.is_authenticated():
         return render(request, 'setlist.html', {'title':'My Setlist', 
-            'song_optionlist_setlistsong':song_optionlist_setlistsong, 'current_setlist':current_setlist,
-            'ministries':ministries})
+            'songs_keys_setlistsongs_stats':songs_keys_setlistsongs_stats, 'current_setlist':current_setlist,
+             'ministries':ministries})
     else:
         return render(request, 'setlist.html', {'title':'My Setlist', 'song_optionlist':song_optionlist})
         

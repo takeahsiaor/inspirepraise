@@ -12,6 +12,7 @@
 <link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
 <link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
 <link href="{% static 'songs/bxslider/jquery.bxslider.css'%}" rel="stylesheet" type="text/css">
+<script src="{%static 'songs/song_stats_context.js' %}"></script>
 <style>
 .sortable {
     list-style-type: none;
@@ -43,6 +44,31 @@ td{
 
 {% block content %}
 <h1>My Setlist</h1>
+
+{% if user.is_authenticated %}
+View song usage statistics from:
+<div class="row">
+<div class="col-md-3">
+    <select class="form-control song-stats-context">
+        {% if request.session.song_stats_context.user == user %}
+            <option value=0 selected>{{user.email}}</option>
+        {% else %}
+            <option value=0>{{user.email}}</option>
+        {% endif %}
+        {% for ministry in ministries %}
+            {% if request.session.song_stats_context == ministry %}
+                <option value={{ministry.id}} selected>{{ministry.name}}</option>
+            {% else %}
+                <option value={{ministry.id}}>{{ministry.name}}</option>
+            {% endif %}
+        {%endfor %}
+    </select>
+</div>
+<div class="col-md-2">
+    <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
+</div>
+</div><br>
+{% endif %}
 
 <div id="setlist_results">
 
@@ -124,7 +150,7 @@ td{
 
     
     <!-- logged in -->
-    {% elif song_optionlist_setlistsong %}
+    {% elif songs_keys_setlistsongs_stats %}
         <div class="setlist-notes-display">
             {% if current_setlist.notes %}
             <div class="alert alert-info">
@@ -163,12 +189,13 @@ td{
         </div>
         <br>
         <ul class="sortable list-group">
-        {% for song, option_list, setlist_song, profilesong in song_optionlist_setlistsong %}
+        {% for song, option_list, setlist_song, stat in songs_keys_setlistsongs_stats %}
             {% if song.chords %}
                 <li class="list-group-item" name="{{song.ccli}}">
                 <div class="row">
                     <div class="col-md-3">{{song.title}}
-                        {% if profilesong %}<br><small><em>Last used {{profilesong.last_used|date}}</em></small>{% endif%}
+                        {% if stat %}<br><small><em>Last used {{stat.0.last_used|date}} in {{stat.1.key}}
+                        </em></small>{% endif%}
                     </div>
                     <div class="col-md-4">
                         <div class="col-md-4">
@@ -282,17 +309,17 @@ td{
                         value="none" checked>Don't send to any ministry
                     </label>
                 </div>
-                {% for membership in ministries %}
+                {% for ministry in ministries %}
                 <div class="radio">
                     <label>
                     {% if forloop.first %}
                         <input type="radio" name="ministryOption" 
-                            value="{{membership.ministry.id}}">
+                            value="{{ministry.id}}">
                     {% else %}
                         <input type="radio" name="ministryOption" 
-                            value="{{membership.ministry.id}}">
+                            value="{{ministry.id}}">
                     {% endif %}
-                            {{membership.ministry.name}} - {{membership.ministry.address}}, {{membership.ministry.state_province}}
+                            {{ministry.name}} - {{ministry.address}}, {{ministry.state_province}}
                     </label>
                 </div>
                 {% endfor %}

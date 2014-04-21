@@ -15,7 +15,7 @@
 <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
 <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
-
+<script src="{%static 'songs/song_stats_context.js' %}"></script>
 <script type="text/javascript">  
     var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
     var setlist_length = setlist.length;
@@ -93,6 +93,31 @@ tr.song:hover{
 {% block content %}
 <h1>Search by Verse</h1>
 
+{% if user.is_authenticated %}
+View song usage statistics from:
+<div class="row">
+<div class="col-md-3">
+    <select class="form-control song-stats-context">
+        {% if request.session.song_stats_context.user == user %}
+            <option value=0 selected>{{user.email}}</option>
+        {% else %}
+            <option value=0>{{user.email}}</option>
+        {% endif %}
+        {% for ministry in ministries %}
+            {% if request.session.song_stats_context == ministry %}
+                <option value={{ministry.id}} selected>{{ministry.name}}</option>
+            {% else %}
+                <option value={{ministry.id}}>{{ministry.name}}</option>
+            {% endif %}
+        {%endfor %}
+    </select>
+</div>
+<div class="col-md-2">
+    <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
+</div>
+</div><br>
+{% endif %}
+
 <form class="form-inline" role="form"> <!-- action="" method="get" -->
     <div class="form-group">
             <input type="text" autocomplete="off" class="form-control" id="id_query" name="query" placeholder="Enter Verses" value="{{query}}">
@@ -101,7 +126,7 @@ tr.song:hover{
     <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6"><span class="ladda-label">Search</span></button>
 </form>
 
-{% if song_and_key_option_list %}
+{% if songs_keys_stats %}
 <br>
 <div class="row">
     <div class="col-md-7">
@@ -127,9 +152,17 @@ tr.song:hover{
     <thead>
     <tr><th>Song Title</th><th>Authors</th><th>CCLI</th><th>Chords</th></tr>
     </thead>
-    {% for song, option_list in song_and_key_option_list %}
+    {% for song, option_list, stat in songs_keys_stats %}
         <tr class="song" id="{{song.ccli}}-row">
-            <td>{{song.title}}</td> 
+            <td>
+            <div class="row"><div class="col-md-12">{{song.title}}</div>
+            </div>
+            {% if stat %}
+            <div class="row"><div class="col-md-12"><em><small>
+            Last used {{stat.0.last_used|date}} in {{stat.1.key}}</small></em></div>
+            </div>
+            {% endif %}
+            </td> 
             <td>{{song.authors.all|join:', '}}</td> 
             <td>{{song.ccli}}</td> 
             {% if song.chords %}

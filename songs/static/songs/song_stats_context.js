@@ -12,8 +12,10 @@ $(document).ready(function () {
     // });
     $('.song-stats-context').change(function(){
         id = $(this).val();
+        $('#context-loading-spinner').removeClass('hidden');
         $.get('/change-song-stats-context/', {'id':id}, function(response){
-        
+            // do i need this page reload?
+            window.location.reload() 
         });
     });
 

@@ -7,6 +7,7 @@
 <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
 <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
+<script src="{%static 'songs/song_stats_context.js' %}"></script>
 <script type="text/javascript">  
     $(document).ready(function(){
         $('form').submit(function(){
@@ -43,6 +44,30 @@
 {% endif %}
 </div>
 
+{% if user.is_authenticated %}
+View song usage statistics from:
+<div class="row">
+<div class="col-md-3">
+    <select class="form-control song-stats-context">
+        {% if request.session.song_stats_context.user == user %}
+            <option value=0 selected>{{user.email}}</option>
+        {% else %}
+            <option value=0>{{user.email}}</option>
+        {% endif %}
+        {% for ministry in ministries %}
+            {% if request.session.song_stats_context == ministry %}
+                <option value={{ministry.id}} selected>{{ministry.name}}</option>
+            {% else %}
+                <option value={{ministry.id}}>{{ministry.name}}</option>
+            {% endif %}
+        {%endfor %}
+    </select>
+</div>
+<div class="col-md-2">
+    <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
+</div>
+</div><br>
+{% endif %}
 
 <form class="form-inline" role="form"> <!-- action="" method="get" -->
     <div class="form-group">

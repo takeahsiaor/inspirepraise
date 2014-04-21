@@ -32,9 +32,9 @@
 </div>
 
 {% if user.is_authenticated %}
+View song usage statistics from:
 <div class="row">
 <div class="col-md-3">
-    View song usage statistics from:
     <select class="form-control song-stats-context">
         {% if request.session.song_stats_context.user == user %}
             <option value=0 selected>{{user.email}}</option>
@@ -49,6 +49,9 @@
             {% endif %}
         {%endfor %}
     </select>
+</div>
+<div class="col-md-2">
+    <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
 </div>
 </div><br>
 {% endif %}

@@ -87,25 +87,25 @@ used songs are for this ministry!
 
 
 <div class="row">
-<div class="col-md-4">
+<div class="col-md-5">
     {% if recent_songs %}
     <h2>Recently used Songs</h2>
         {% for recent_song in recent_songs %}
         <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
             data-target="#song-stats-details" id="{{recent_song.song.ccli}}" name="{{ministry.id}}">
-        {{recent_song.last_used|date}} - {{recent_song.song.title}} 
-        </button>
+        {{recent_song.last_used|date}} - {{recent_song.song.title|truncatechars:30}} 
+        </button><br>
         {% endfor %}
 
     {% endif %}
 </div>
-<div class="col-md-8">
+<div class="col-md-7">
     {% if common_songs %}
     <h2>Commonly used Songs</h2>
         {% for common_song in common_songs %}
         <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
             data-target="#song-stats-details" id="{{common_song.song.ccli}}" name="{{ministry.id}}">
-            {{common_song.song.title}} ({{common_song.times_used}})
+            {{common_song.song.title|truncatechars:30}} ({{common_song.times_used}})
         </button>
         {% endfor %}
     {% endif %}

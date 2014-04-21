@@ -15,6 +15,7 @@
     <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
     <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
+    <script src="{%static 'songs/song_stats_context.js' %}"></script>
     <script type="text/javascript">  
         var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
         var setlist_length = setlist.length;
@@ -91,15 +92,26 @@
 </div>
 
 {% if user.is_authenticated %}
+View song usage statistics from:
 <div class="row">
 <div class="col-md-3">
-    View song usage statistics from:
-    <select class="form-control">
-        <option value=0>{{user.email}}</option>
+    <select class="form-control song-stats-context">
+        {% if request.session.song_stats_context.user == user %}
+            <option value=0 selected>{{user.email}}</option>
+        {% else %}
+            <option value=0>{{user.email}}</option>
+        {% endif %}
         {% for ministry in ministries %}
-        <option value={{ministry.id}}>{{ministry.name}}</option>
+            {% if request.session.song_stats_context == ministry %}
+                <option value={{ministry.id}} selected>{{ministry.name}}</option>
+            {% else %}
+                <option value={{ministry.id}}>{{ministry.name}}</option>
+            {% endif %}
         {%endfor %}
     </select>
+</div>
+<div class="col-md-2">
+    <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
 </div>
 </div><br>
 {% endif %}
@@ -119,7 +131,7 @@
     </div>
     
 </form>
-{% if song_and_key_option_list %}
+{% if songs_keys_stats %}
 
 <div class="row">
     <div class="col-md-7">
@@ -143,14 +155,21 @@
 </div>
 
 
-    
     <table class="table" id="songlisting">
     <thead>
     <tr><th>Song Title</th><th>Authors</th><th>CCLI</th><th>Chords</th></tr>
     </thead>
-        {% for song, option_list in song_and_key_option_list %}
+        {% for song, option_list, stat in songs_keys_stats %}
         <tr class="song" id="{{song.object.ccli}}-row">
-            <td>{{song.object.title}}</td> 
+            <td>
+            <div class="row"><div class="col-md-12">{{song.object.title}}</div>
+            </div>
+            {% if stat %}
+            <div class="row"><div class="col-md-12"><em><small>
+            Last used {{stat.0.last_used|date}} in {{stat.1.key}}</small></em></div>
+            </div>
+            {% endif %}
+            </td> 
             <td>{{song.object.authors.all|join:', '}}</td> 
             <td>{{song.object.ccli}}</td> 
             {% if song.object.chords %}
