@@ -662,11 +662,16 @@ def is_parsable(request):
         verse_list = parse_string_to_verses(query)
         if len(verse_list) > 0:
             parsable = True
+            message = "True"
         else:
             parsable = False
+            message = "False"
     except:
         parsable = False
-    return render(request, 'format_as_option_list.html', {'parse_test':True, 'parsable':parsable})
+        message = "False"
+    # don't need to send to format as option list
+    # return render(request, 'format_as_option_list.html', {'parse_test':True, 'parsable':parsable})
+    return HttpResponse(message)
     
 def import_songverse_from_file(request):
     """
@@ -1402,6 +1407,25 @@ def tag_song(request, ccli):
         form = BasicForm()
     return render(request, 'form.html',
         {'form':form, 'title':'Tag Song', 'header1':'Tag Song with Verses', 'song':song, 'tag_song':True})
+        
+def tag_setlist(request):
+    """
+    this handles tagging of songs and verses through the setlist screen.
+    will accept only a parsable string of verses and will tag them with the current setlist
+    """
+    #setlist will be the list of tuple version since this will be log in agnostic
+    setlist = request.session['setlist']
+    verse_string = request.GET.get('verse_query')
+    verse_id_list = parse_string_to_verses(verse_string)
+    #extract cclis out of setlist
+    for ccli_key in setlist:
+        ccli = ccli_key[0]
+        song = Song.objects.get(ccli=ccli)
+        link_song_to_verses(song, verse_id_list)
+        update_num_tags(request, 1, len(verse_id_list))
+    msg = "This setlist has been successfully tagged with %s! Thanks!" % verse_string
+    messages.success(request, msg)
+    return HttpResponseRedirect(reverse('songs.views.success'))
 
 
 def tag_handler(request):
@@ -1420,6 +1444,7 @@ def tag_handler(request):
         
         song = Song.objects.get(ccli=ccli)
         link_song_to_verses(song, verse_ids)
+        update_num_tags(request, 1, len(verse_ids))
         return HttpResponseRedirect(reverse('songs.views.success')) 
     return HttpResponseRedirect(reverse('songs.views.profile'))  
         
@@ -1428,9 +1453,8 @@ def tag_verses(request):
     handles display of tag songs and verses page. most of the logic is happening in
     tag_verses.js imported in tag_verses.html
     """
-    form = BasicForm()
     return render(request, 'tag_verses.html',
-        {'form':form, 'title':'Tag Verses', 'header1':'Tag Songs & Verses', 'tag_verses':True})
+        {'title':'Tag Verses', 'header1':'Tag Songs & Verses', 'tag_verses':True})
      
 def tag_verse_song_search(request):
     #returns result of search title to tag_verse page
@@ -1568,6 +1592,7 @@ def search_info(request):
                                 details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
                                 song_stats.append((profile_song,details))
                                 found = True
+                                break
                         if not found:
                             song_stats.append(None)
                 else:
@@ -1583,6 +1608,7 @@ def search_info(request):
                                 details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
                                 song_stats.append((ministry_song,details))
                                 found = True
+                                break
                         if not found:
                             song_stats.append(None)
                 songs_keys_stats = zip(songs, option_list, song_stats)    
@@ -1651,6 +1677,7 @@ def search_all(request):
                         details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
                         song_stats.append((profile_song,details))
                         found = True
+                        break
                 if not found:
                     song_stats.append(None)
         else:
@@ -1666,6 +1693,7 @@ def search_all(request):
                         details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
                         song_stats.append((ministry_song,details))
                         found = True
+                        break
                 if not found:
                     song_stats.append(None)
         songs_keys_stats = zip(songs, option_list, song_stats)    
@@ -1741,6 +1769,7 @@ def search_verses(request):
                                 details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
                                 song_stats.append((profile_song,details))
                                 found = True
+                                break
                         if not found:
                             song_stats.append(None)
                 else:
@@ -1756,6 +1785,7 @@ def search_verses(request):
                                 details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
                                 song_stats.append((ministry_song,details))
                                 found = True
+                                break
                         if not found:
                             song_stats.append(None)
                 songs_keys_stats = zip(songs, option_list, song_stats)    
@@ -1820,8 +1850,6 @@ def search_songs_with_chords(request):
                 found = False
                 for profile_song in profile_songs:
                     #goes through each ministry song to find a match
-                    print profile_song.song
-                    print song
                     if profile_song.song == song:
                         details = ProfileSongDetails.objects.filter(profilesong=profile_song).latest('date')
                         song_stats.append((profile_song,details))
@@ -1842,6 +1870,7 @@ def search_songs_with_chords(request):
                         details = MinistrySongDetails.objects.filter(ministrysong=ministry_song).latest('date')
                         song_stats.append((ministry_song,details))
                         found = True
+                        break
                 if not found:
                     song_stats.append(None)
         songs_keys_stats = zip(songs, option_list, song_stats)    
@@ -2072,7 +2101,6 @@ def setlist(request):
     """
     handles display of setlist
     """
-      
     #common section
     try: # makes sure structure is in place if no songs are in setlist and not logged in
         setlist_as_list = request.session['setlist'] #just a list of tuples
@@ -2095,8 +2123,6 @@ def setlist(request):
         if key: # if key is "None" means no chords, means empty option_html
             option_html = make_key_option_html(key)
         option_list.append(option_html)
-    
-    
     
     #authenticated section
     #gets more functionality: notes for setlist, persistent order, created by, archive, order in song, capo key, song notes

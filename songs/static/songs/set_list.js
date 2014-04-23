@@ -127,6 +127,41 @@ $(document).ready(function () {
         });
     });
     
+    //this is when you click on the tag button in the modal to confirm verse tagging
+    $('.tag-confirm').click(function(){
+        $verse_query = $("input[name='verse_query']").val();
+        if ($verse_query == ''){
+            $('.messages').empty()
+            $('.messages').html('<div class="alert alert-danger">You must enter verses to tag!</div>')
+        }
+        else {
+            $.get('/is-parsable/', {'query':$verse_query}, function(response){
+                //yes it is parsable!!
+                if (response.indexOf('True') >= 0 ){
+                    $.get('/tag-setlist/', {'verse_query':$verse_query}, function(response){
+                        window.location.reload();
+                        $('#tag-modal').modal('hide');
+                    });
+                }
+                //no it's not!
+                else{
+                    $('.messages').empty()
+                    $('.messages').html('<div class="alert alert-danger">We don\'t understand what you wrote or the\
+                        verses you typed don\'t exist!</div>')
+                }
+            });
+        }
+    });
+    
+    //having issues with trying to delete text from typeahead field tag verse field
+    //may just need to implement forced refresh of page 
+    $('#tag-button').click(function(){
+        $('.messages').empty()
+        // $('#tag-verses').val('');
+        // $('.tt-hint').val('');
+        // $('.twitter-typeahead>span').empty();
+    });
+    
     $('.transpose-value').change(function() {
         var ccli_str = '';
         $(".sortable>li").each(function(){

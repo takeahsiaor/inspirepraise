@@ -13,6 +13,8 @@
 <link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
 <link href="{% static 'songs/bxslider/jquery.bxslider.css'%}" rel="stylesheet" type="text/css">
 <script src="{%static 'songs/song_stats_context.js' %}"></script>
+<script src="{% static 'songs/bootstrap/js/typeahead.js' %}"></script>  
+<link href="{% static 'songs/bootstrap/css/typeahead.js-bootstrap.css'%}" rel="stylesheet" type="text/css">
 <style>
 .sortable {
     list-style-type: none;
@@ -45,6 +47,21 @@ td{
 {% block content %}
 <h1>My Setlist</h1>
 
+{% if messages %}
+{% for message in messages %}
+    {% if message.level < 26 %}
+    <div class="alert alert-success">
+        {{ message }} 
+    </div>
+    {% endif %}
+    {% if message.level > 26 %}
+    <div class="alert alert-warning">
+        {{ message }} 
+    </div>
+    {% endif %}
+{% endfor %}
+{% endif %}
+
 {% if user.is_authenticated %}
 View song usage statistics from:
 <div class="row">
@@ -64,6 +81,10 @@ View song usage statistics from:
         {%endfor %}
     </select>
 </div>
+<div class="col-md-1">
+    <button class="btn btn-default" id="song-stats-context-help" data-container="body" data-toggle="popover">
+        <i class="fa fa-question-circle"></i></button>
+</div>
 <div class="col-md-2">
     <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>
 </div>
@@ -78,6 +99,8 @@ View song usage statistics from:
         <div class="col-md-9">
             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
             <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button> 
+            <button type="button" class="btn btn-default" id="tag-button"
+                data-toggle="modal" data-target="#tag-modal">Tag</button>
             <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
                 id="refresh-chords">Refresh Chord Preview</button>
         </div>
@@ -148,7 +171,6 @@ View song usage statistics from:
         </ul>
 
 
-    
     <!-- logged in -->
     {% elif songs_keys_setlistsongs_stats %}
         <div class="setlist-notes-display">
@@ -172,12 +194,12 @@ View song usage statistics from:
                     <li><a href="#" class="download-lyrics-setlist">Download Setlist Lyrics</a></li>
                 </ul>
             </div>
-<!--             <button type="button" class="btn btn-default" id="download-all">Download Setlist Chords</button>
-            <button type="button" class="btn btn-default download-lyrics-setlist">Download Setlist Lyrics</button>       -->  
             <button type="button" class="btn btn-default setlist-note" data-toggle="modal" data-target="#myModal">Add/Edit Notes</button>
             
             <button type="button" class="btn btn-default {% if ministries %}publish-button{%endif%}" data-toggle="modal" 
                 data-target="#share-modal" >Publish Setlist</button>
+            <button type="button" class="btn btn-default" id="tag-button" 
+                data-toggle="modal" data-target="#tag-modal">Tag</button>
             <button type="button" class="btn btn-default refresh-chords" style="visibility:hidden" 
                 id="refresh-chords">Refresh</button>
         </div>
@@ -392,6 +414,28 @@ View song usage statistics from:
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
+<!-- modal for tag -->
+<div class="modal fade" id="tag-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="tag-modal-label">Tag setlist songs with verses</h4>
+      </div>
+      <div class="modal-body" id="tag-modal-body">
+        <div class="messages">
+        
+        </div>
+        <span class="help-block">Enter the verses you'd like to tag with this setlist:</span>
+        <input class="form-control" name="verse_query" id="tag-verses" rows="6" placeholder="Enter Verses..."></input>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success tag-confirm">Tag!</button>
+        <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 <script>
 $('.clear-setlist-notes-text').click(function() {
@@ -468,6 +512,22 @@ $('#myModal').on('hide.bs.modal', function(e){
         $('.setlist-notes-display').empty();
         $('.setlist-notes-display').html(setlistnotes_display_html);
     });
+});
+
+
+$('#tag-verses').typeahead({
+    local:["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua",
+            "Judges", "Ruth", '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', 
+            '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job',
+            'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah',
+            'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+            'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah',
+            'Haggai', 'Zechariah', 'Malachi', 'Matthew', 'Mark', 'Luke', 'John',
+            'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 
+            'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
+            '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon',
+            'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+            'Jude', 'Revelation']
 });
 //$('[data-toggle="popover"]').popover({
     //'trigger': 'hover',

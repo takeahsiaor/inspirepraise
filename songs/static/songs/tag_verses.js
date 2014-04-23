@@ -76,12 +76,6 @@ $(document).ready(function () {
                     //send info to django view for tagging logic
                     //$.post( "test.php", { name: "John", time: "2pm" } );
                     $.get('/tag-handler/', {verses: $versestring, ccli:$ccli});
-                    // $('#alerts').empty();
-                    // $('<div class="alert alert-success">Tag Complete! Thanks for submitting!</div>')
-                      // .appendTo($('#alerts'))
-                      // .fadeIn('slow')
-                      // .delay(3000)
-                      // .fadeOut('slow')
                         $.pnotify({
                             title: 'Tag Complete!',
                             text: 'Thanks for your submission!',
@@ -115,12 +109,7 @@ $(document).ready(function () {
     $("input[name='add_verses']").click(function(){
         $verse_query = $("input[name='verse_query']").val();
         if ($verse_query == ''){
-            // $('#alerts').empty();
-            // $('<div class="alert alert-danger">Oops! Please enter verses to tag.</div>')
-              // .appendTo($('#alerts'))
-              // .fadeIn('slow')
-              // .delay(3000)
-              // .fadeOut('slow');
+
             $.pnotify({
                 title: 'Oops!',
                 text: 'Please enter verses to tag!',
@@ -152,12 +141,6 @@ $(document).ready(function () {
                 }
                 //no it's not!
                 else{
-                    // $('#alerts').empty();
-                    // $("<div class='alert alert-danger'>Oops! We don't understand what you typed or the verses don't exist.</div>")
-                      // .appendTo($('#alerts'))
-                      // .fadeIn('slow')
-                      // .delay(3000)
-                      // .fadeOut('slow');
                     $.pnotify({
                         title: 'Oops!',
                         text: "What you typed is gibberish to us or the verses don't exist!",
@@ -186,61 +169,7 @@ $(document).ready(function () {
 
     });
     
-    //function to get book list from view
-    // function get_books(){
-        // $book_query = $("input[name='verse_query']").val();
 
-        // $('#verse_results').html('');
-        // $.get('/worship/bookfind/' + $book_query, function(response){
-            // $(response).appendTo('#verse_results');
-            // $('.small_spinner').attr('class', 'small_spin');
-        // });
-    
-    // }
-    
-    //as you type book in verse query, books are suggested
-    // $("input[name='verse_query']").keyup(function(){
-        // delay(function(){
-            // get_books();
-        // }, 650);        
-    // });
-        
-    //test code for single button
-    // $('.tag-button').click(function(){
-        // var $versestring ='';
-        // $('.verse').each(function(){
-            // //be aware of how the string is given. will have | beginning
-            // //thus, split will produce empty first element
-            // $versestring = $versestring + ' | ' + $(this).text();
-        // });
-        // alert($versestring);
-        // var $ccli = $(this).attr('name');
-        // if($versestring== ''){
-            // $('#alerts').html('');
-            // $('<div class="alert">Oops! Please enter verses to tag.</div>')
-              // .insertAfter($('#alerts'))
-              // .fadeIn('slow')
-              // .delay(3000)
-              // .fadeOut('slow');
-            
-        // }
-        // else{
-        
-            // $('#alerts').html('');
-            // $('<div class="alert">Tag Complete! Thanks for submitting!</div>')
-              // .insertAfter($('#alerts'))
-              // .fadeIn('slow')
-              // .delay(3000)
-              // .fadeOut('slow')
-            // // $('#alerts').append('Tag complete!').delay(3000).fadeOut();
-            
-            // // alert($versestring + ' tagged with song '+$ccli);
-            
-        // }
-    // });
-    
-
-    
     
 });
 

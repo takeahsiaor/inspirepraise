@@ -18,5 +18,14 @@ $(document).ready(function () {
             window.location.reload() 
         });
     });
-
+    
+    options = { 'content': 'InspirePraise can keep track of song usage information for users and ministries. \
+                            By choosing your personal profile or a ministry you are a part of in the select box,\
+                            you can easily view\
+                            when you or your ministry last used a song, what key the song was used in, and more!',
+                'placement': 'right',
+                
+                };
+    $('#song-stats-context-help').popover(options);
+    
 });

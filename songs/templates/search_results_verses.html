@@ -94,7 +94,7 @@ tr.song:hover{
 <h1>Search by Verse</h1>
 
 {% if user.is_authenticated %}
-View song usage statistics from:
+View song usage info from:
 <div class="row">
 <div class="col-md-3">
     <select class="form-control song-stats-context">
@@ -111,6 +111,10 @@ View song usage statistics from:
             {% endif %}
         {%endfor %}
     </select>
+</div>
+<div class="col-md-1">
+    <button class="btn btn-default" id="song-stats-context-help" data-container="body" data-toggle="popover">
+        <i class="fa fa-question-circle"></i></button>
 </div>
 <div class="col-md-2">
     <i id="context-loading-spinner" class="fa fa-refresh fa-spin fa-2x hidden"></i>

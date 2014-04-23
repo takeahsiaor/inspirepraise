@@ -5,8 +5,9 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 from django.contrib.auth.models import User
+from django.test import Client
 from model_mommy import mommy
-from django.test import TestCase
+from django.test import TestCase, LiveServerTestCase
 from songs.functions import transpose, convert_setlist_to_string, make_key_option_html
 from songs.views import parse_string_to_verses
 from songs.models import Verse, Book, Chapter, Profile, Song, Setlist, SetlistSong
@@ -72,6 +73,8 @@ class UpdateSetlistUnauth(TestCase):
         ccli = str(song.ccli)
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
         self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
+        
+
 
 #test publish setlist four cases. 
 #1. send to ministry, no data save
@@ -81,20 +84,34 @@ class UpdateSetlistUnauth(TestCase):
 #5. no ministry to send to, no data
 #6. no ministry to send to, with data save
         
-class UpdateSetlistAuth(TestCase):       
+class UpdateSetlistAuth(LiveServerTestCase):       
     def setUp(self):
         user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
         profile = Profile(user=user) 
+        self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})
         
     def test_add_auth(self):
         song = mommy.make(Song)
-        ccli = str(song.ccli)
-        user = authenticate(username='temp', password='temp')
         current_setlist = self.client.session.get('current_setlist')
+        ccli = str(song.ccli)
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
         self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
         setlist_song = SetlistSong.objects.filter(setlist=current_setlist, song=song)
         self.assertEqual(len(setlist_song), 1)
+        
+    def test_clear_auth(self):
+        #need to finish
+        song = mommy.make(Song)
+        current_setlist = self.client.session.get('current_setlist')
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+        old_setlist = current_setlist
+        response = self.client.get('/update-setlist/?ccli=clear')
+        new_setlist = self.client.session.get('current_setlist')
+        self.assertEqual(new_setlist,old_setlist) #this should fail
+        setlist_song = SetlistSong.objects.filter(setlist=new_setlist, song=song)
+        self.assertEqual(len(setlist_song), 0)
+        self.assertEqual(self.client.sesssion.get('setlist'), [])
         
 
 # class StringToVerseParseTests(TestCase):

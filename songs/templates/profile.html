@@ -21,8 +21,8 @@
     </div>
     {% endif %}
 {% endfor %}
-
 {% endif %}
+
 <div class="row">
     <hr>
     <div class="col-md-12">
@@ -32,7 +32,7 @@
     </div>
 </div>
 <div class='row'>
-    <div class="col-md-4">
+    <div class="col-md-5">
         <h2>Basic Information</h2>
         <p>
             First Name: {{user.first_name}} <br>
@@ -49,7 +49,7 @@
         {% endif %}
 
     </div>
-    <div class="col-md-8">
+    <div class="col-md-7">
         <h2>Profile</h2>
         <p>
         Number of Songs tagged: {{profile.num_song_tags}}<br>
@@ -63,25 +63,25 @@
 </div>
 
 <div class="row">
-<div class="col-md-4">
+<div class="col-md-5">
     {% if recent_songs %}
     <h2>Recently used Songs</h2>
         {% for recent_song in recent_songs %}
         <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
             data-target="#song-stats-details" name="{{recent_song.song.ccli}}">
-        {{recent_song.last_used|date}} - {{recent_song.song.title}} 
+        {{recent_song.last_used|date}} - {{recent_song.song.title|truncatechars:35}} 
         </button>
         {% endfor %}
 
     {% endif %}
 </div>
-<div class="col-md-8">
+<div class="col-md-7">
     {% if common_songs %}
     <h2>Commonly used Songs</h2>
         {% for common_song in common_songs %}
         <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
             data-target="#song-stats-details" name="{{common_song.song.ccli}}">
-            {{common_song.song.title}} ({{common_song.times_used}})
+            {{common_song.song.title|truncatechars:35}} ({{common_song.times_used}})
         </button>
         {% endfor %}
     {% endif %}
