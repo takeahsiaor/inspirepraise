@@ -59,10 +59,6 @@ class SongsViewsTestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
 
 class UpdateSetlistUnauth(TestCase):
-    # fixtures = ['songs_views_testdata.json']
-    # def test_number_of_songs(self):
-        # num = len(Song.objects.all())
-        # self.assertEqual(num, 100)
     def setUp(self):
         pass
         # song = mommy.make(Song)
@@ -84,7 +80,7 @@ class UpdateSetlistUnauth(TestCase):
 #5. no ministry to send to, no data
 #6. no ministry to send to, with data save
         
-class UpdateSetlistAuth(LiveServerTestCase):       
+class UpdateSetlistAuth(TestCase):       
     def setUp(self):
         user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
         profile = Profile(user=user) 
@@ -92,28 +88,193 @@ class UpdateSetlistAuth(LiveServerTestCase):
         
     def test_add_auth(self):
         song = mommy.make(Song)
-        current_setlist = self.client.session.get('current_setlist')
         ccli = str(song.ccli)
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+        #test proper setlist as list
         self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
+        #test that a setlistsong was created
+        current_setlist = self.client.session.get('current_setlist')
         setlist_song = SetlistSong.objects.filter(setlist=current_setlist, song=song)
         self.assertEqual(len(setlist_song), 1)
+        #test that setlist song order string is correct
+        setlist_string_order = ccli+'-G'
+        self.assertEqual(setlist_string_order, current_setlist.song_order)
         
     def test_clear_auth(self):
-        #need to finish
         song = mommy.make(Song)
         current_setlist = self.client.session.get('current_setlist')
         ccli = str(song.ccli)
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
-        old_setlist = current_setlist
+        old_setlist_id = current_setlist.id
         response = self.client.get('/update-setlist/?ccli=clear')
         new_setlist = self.client.session.get('current_setlist')
-        self.assertEqual(new_setlist,old_setlist) #this should fail
+        #test if old setlist is deleted
+        self.assertEqual(False, Setlist.objects.filter(id=old_setlist_id).exists()) 
+        #test if old setlistsong is deleted
+        self.assertEqual(False, SetlistSong.objects.filter(setlist__id=old_setlist_id).exists())
+        #make sure there is no new SetlistSong created
         setlist_song = SetlistSong.objects.filter(setlist=new_setlist, song=song)
-        self.assertEqual(len(setlist_song), 0)
-        self.assertEqual(self.client.sesssion.get('setlist'), [])
+        self.assertEqual(False, setlist_song.exists())
+        #make sure session setlist is empty list
+        self.assertEqual(self.client.session.get('setlist'), [])
+        #test to see if that the new setlist is not archived
+        self.assertEqual(False, new_setlist.archived)
+        #test that old setlist is not hte same as the new setlist
+        self.assertNotEqual(old_setlist_id, new_setlist.id)
         
+    def test_remove_auth(self):
+        songs = mommy.make(Song, _quantity=3)
+        setlist_as_list = []
+        for song in songs:
+            ccli = str(song.ccli)
+            response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+            setlist_as_list.append((ccli, 'G'))
+        #remove middle element - songs[1]
+        ccli_to_remove = str(songs[1].ccli)
+        response = self.client.get('/update-setlist/?remove=true&ccli='+ccli_to_remove) 
+        #test that setlist order string is good
+        current_setlist = self.client.session.get('current_setlist')
+        song_order_string = str(songs[0].ccli)+'-G,'+str(songs[2].ccli)+'-G'
+        self.assertEqual(song_order_string, current_setlist.song_order)
+        #test that setlistsong object is deleted
+        setlistsongs = SetlistSong.objects.filter(setlist=current_setlist)
+        self.assertEqual(2, len(setlistsongs))
+        #test that setlist_as_list is correct
+        setlist_as_list.pop(1)
+        self.assertEqual(setlist_as_list, self.client.session.get('setlist'))
 
+    def test_reorder_auth(self):
+        #can't rely on mommy to make songs with random ccli. will create negative cclis that interfere with 
+        #parsing of ccli_string (split on '-')
+        song1 = mommy.make(Song, ccli=1)
+        song2 = mommy.make(Song, ccli=2)
+        song3 = mommy.make(Song, ccli=3)
+        songs = [song1, song2, song3]
+        setlist_as_list = []
+        for song in songs:
+            ccli = str(song.ccli)
+            response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+            setlist_as_list.append((ccli, 'G'))
+        #swap 2nd and 3rd
+        ccli_to_send = str(songs[0].ccli)+'-G,'+str(songs[2].ccli)+'-G,'+str(songs[1].ccli)+'-G,'
+        response = self.client.get('/update-setlist/?reorder=true&ccli='+ccli_to_send)
+        #test song order in setlist object
+        current_setlist = self.client.session.get('current_setlist')
+        self.assertEqual(current_setlist.song_order, ccli_to_send[:-1])
+        #test setlist as list for order
+        new_setlist_as_list = [setlist_as_list[0], setlist_as_list[2], setlist_as_list[1]]
+        self.assertEqual(new_setlist_as_list, self.client.session.get('setlist'))
+        
+    def test_setlist_notes_auth(self):
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')        
+        notes = 'here are some notes!'
+        #test that notes were saved
+        response = self.client.get('/update-setlist/?ccli=1&cancel=false&setlist-notes='+notes)
+        current_setlist = self.client.session.get('current_setlist')
+        self.assertEqual(current_setlist.notes, notes)
+        #test if user presses cancel function
+        response = self.client.get('/update-setlist/?ccli=1&cancel=true&setlist-notes=blahblahblah')
+        current_setlist = self.client.session.get('current_setlist')
+        self.assertEqual(current_setlist.notes, notes)     
+        #test if user changes notes
+        response = self.client.get('/update-setlist/?ccli=1&cancel=false&setlist-notes=blahblahblah')   
+        current_setlist = self.client.session.get('current_setlist')
+        self.assertEqual(str(current_setlist.notes), 'blahblahblah')    
+        
+    def test_song_notes_auth(self):
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')       
+        #test that notes were saved
+        song_notes = 'here are some notes!'
+        response = self.client.get('/update-setlist/?ccli='+ccli+'&song-notes='+song_notes+'&cancel=false')
+        current_setlist = self.client.session.get('current_setlist')
+        setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
+        self.assertEqual(setlist_song.notes, song_notes)
+        #test if user presses cancel
+        response = self.client.get('/update-setlist/?ccli='+ccli+'&song-notes=blahblahblah&cancel=true')
+        current_setlist = self.client.session.get('current_setlist')
+        setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
+        self.assertEqual(setlist_song.notes, song_notes)        
+        #test if user changes notes
+        response = self.client.get('/update-setlist/?ccli='+ccli+'&song-notes=blahblahblah&cancel=false')
+        current_setlist = self.client.session.get('current_setlist')
+        setlist_song = SetlistSong.objects.get(setlist=current_setlist, song=song)
+        self.assertEqual(setlist_song.notes, 'blahblahblah')     
+
+    def test_archived_auth(self):
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')     
+        current_setlist = self.client.session['current_setlist']
+        setlist_id_to_archive = current_setlist.id
+        #run archive
+        response = self.client.get('/update-setlist/?archive=true')
+        #test that archived session variable is set
+        archived = self.client.session['archived']
+        self.assertEqual(archived, True)
+        #test that the current setlist is set to archived
+        archived_setlist = Setlist.objects.get(id=setlist_id_to_archive)
+        self.assertEqual(True, archived_setlist.archived)
+        #test that a new setlist is created and set to session variable current_setlist
+        current_setlist = self.client.session['current_setlist']
+        self.assertNotEqual(current_setlist.id, setlist_id_to_archive)
+        #test that empty list is set as setlist session variable
+        self.assertEqual([], self.client.session['setlist'])
+        
+    def test_delete_setlist_auth(self):
+        #for deleting from archive
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')     
+        current_setlist = self.client.session['current_setlist']
+        setlist_id = current_setlist.id
+        #test that setlist exists and setlist song exists
+        self.assertEqual(True, Setlist.objects.filter(id=setlist_id).exists())
+        self.assertEqual(True, SetlistSong.objects.filter(setlist=current_setlist).exists())
+        response = self.client.get('/update-setlist/?delete='+str(setlist_id))
+        #test that setlist is deleted
+        self.assertEqual(False, Setlist.objects.filter(id=setlist_id).exists())
+        #test that setlist songs are deleted
+        self.assertEqual(False, SetlistSong.objects.filter(setlist=current_setlist).exists())
+        
+    def test_reuse_setlist_auth(self):
+        song1 = mommy.make(Song, ccli=1)
+        ccli1 = str(song1.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli1+'&key=G')     
+        current_setlist = self.client.session['current_setlist']
+        setlist1_id = current_setlist.id
+        setlist1_tuple = self.client.session['setlist']
+        #archive setlist1
+        response = self.client.get('/update-setlist/?archive=true')
+        #creates setlist2
+        song2 = mommy.make(Song, ccli=2)
+        ccli2 = str(song2.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli2+'&key=G')     
+        current_setlist = self.client.session['current_setlist']
+        setlist2_id = current_setlist.id
+        setlist2_tuple = self.client.session['setlist']
+        self.assertNotEqual(setlist1_id, setlist2_id)
+        self.assertNotEqual(setlist1_tuple, setlist2_tuple)
+        self.assertEqual(setlist2_tuple, [(ccli2, 'G')])
+        #reuse setlist1
+        response = self.client.get('/update-setlist/?reuse-setlist='+str(setlist1_id))
+        #test that setlist1 (originally archived) is in current_setlist
+        current_setlist = self.client.session['current_setlist']
+        setlist1 = Setlist.objects.get(id=setlist1_id)
+        self.assertEqual(current_setlist, setlist1)
+        #test that setlist1 is not archived
+        self.assertEqual(False, setlist1.archived)        
+        #test that setlist session is correct
+        self.assertEqual(setlist1_tuple, self.client.session['setlist'])        
+        #test that setlist2 (originally active) is archived
+        setlist2 = Setlist.objects.get(id=setlist2_id)
+        self.assertEqual(setlist2.archived, True)
+        
+        
+        
 # class StringToVerseParseTests(TestCase):
     # """
     # tests for parsing string to verse

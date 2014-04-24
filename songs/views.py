@@ -2353,6 +2353,7 @@ def update_setlist(request):
         request.session['current_setlist'] = new_setlist
 
     elif 'delete' in request.GET:
+        #deletes from archive template
         #only available if logged in
         setlist_id = request.GET.get('delete')
         setlist_to_delete = Setlist.objects.get(pk=int(setlist_id))

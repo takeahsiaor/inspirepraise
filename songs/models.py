@@ -168,5 +168,5 @@ class SetlistSong(models.Model):
     capo_key = models.CharField(max_length=5, blank=True)
     order = models.CharField(max_length=100, blank=True)
     def __unicode__(self):
-        return self.song.title + ' in setlist ' + self.setlist.id
+        return self.song.title + ' in setlist ' + str(self.setlist.id)
     
