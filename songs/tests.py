@@ -10,8 +10,8 @@ from model_mommy import mommy
 from django.test import TestCase, LiveServerTestCase
 from songs.functions import transpose, convert_setlist_to_string, make_key_option_html
 from songs.views import parse_string_to_verses
-from songs.models import Verse, Book, Chapter, Profile, Song, Setlist, SetlistSong
-
+from songs.models import Verse, Book, Chapter, Profile, Song, Setlist, SetlistSong, Ministry, MinistryMembership
+from songs.models import MinistrySong, MinistrySongDetails, ProfileSong, ProfileSongDetails
 # class MakeKeyOptionHtmlTestCase(TestCase):
     # def test_major_key(self):
         # key = 'G'
@@ -70,8 +70,66 @@ class UpdateSetlistUnauth(TestCase):
         response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
         self.assertEqual(self.client.session.get('setlist'), [(ccli, 'G')])
         
+        
+#test invite to ministry
+        
+class PublishSetlistAuth(TestCase):
+    #tests push_setlist view
+    # def setUp(self):
+        # user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        # profile = Profile(user=user) 
+        # self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})    
 
-
+    def test_publish_send_to_ministry(self):
+        user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        profile, created = Profile.objects.get_or_create(user=user) 
+        self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})  
+        ministry = mommy.make(Ministry)
+        membership, created = MinistryMembership.objects.get_or_create(member=profile, ministry=ministry)
+        profile2 = mommy.make(Profile)
+        membership2, created = MinistryMembership.objects.get_or_create(member=profile2, ministry=ministry)
+        #test that there are two members in minsitry
+        self.assertEqual(2, len(MinistryMembership.objects.filter(ministry=ministry)))
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+        #COULD ADD ANOTHER UPDATE FOR SETLIST NOTES AND SONG NOTES
+        #test that profile2 does not currently have setlist
+        profile2_setlist = Setlist.objects.filter(profile=profile2)
+        self.assertEqual(False, profile2_setlist.exists())
+        #publish setlist to ministry with saving data
+        response = self.client.get('/push-setlist/?ministry_id='+str(ministry.id)+'&save_stats=true')
+        #test popularity increase of song
+        song = Song.objects.get(ccli=ccli)
+        self.assertEqual(song.popularity, 2)
+        #test saving of profilesong
+        profilesong = ProfileSong.objects.get(profile=profile, song=song)
+        self.assertEqual(profilesong.times_used, 1)
+        #test saving of profilesongdetails
+        profilesongdetails = ProfileSongDetails.objects.filter(profilesong=profilesong)
+        self.assertEqual(True, profilesongdetails.exists())
+        profilesongdetails = profilesongdetails[0]
+        self.assertEqual(profilesongdetails.key, 'G')
+        self.assertEqual(profilesongdetails.song_context, ccli+'-G')
+        #test saving of ministrysong
+        ministrysong = MinistrySong.objects.get(song=song, ministry=ministry)
+        self.assertEqual(ministrysong.times_used, 1)
+        #test saving of ministrysongdetails
+        ministrysongdetails = MinistrySongDetails.objects.filter(ministrysong=ministrysong)
+        self.assertEqual(True, ministrysongdetails.exists())
+        ministrysongdetails = ministrysongdetails[0]
+        self.assertEqual(ministrysongdetails.key, 'G')
+        self.assertEqual(ministrysongdetails.song_context, ccli+'-G')
+        #test that copy of setlist saved to profile2
+        profile2_setlist = Setlist.objects.filter(profile=profile2)
+        self.assertEqual(True, profile2_setlist.exists())
+        #test that setlistsong is also saved
+        profile2_setlistsong = SetlistSong.objects.filter(setlist=profile2_setlist)
+        self.assertEqual(profile2_setlistsong.key, 'G')
+        self.assertEqual(True, profile2_setlistsong.exists())
+        
+        #test send to ministry with no data save
+    
 #test publish setlist four cases. 
 #1. send to ministry, no data save
 #2. send to ministry, with data save
@@ -272,8 +330,75 @@ class UpdateSetlistAuth(TestCase):
         #test that setlist2 (originally active) is archived
         setlist2 = Setlist.objects.get(id=setlist2_id)
         self.assertEqual(setlist2.archived, True)
+    
+    def test_key_reset_auth(self):
+        song1 = mommy.make(Song, ccli=1, chords="{key:A}")
+        song2 = mommy.make(Song, ccli=2, chords="{key:B}")
+        song3 = mommy.make(Song, ccli=3, chords="{key:C}")
+        songs = [song1, song2, song3]
+        setlist_as_list = []
+        for song in songs:
+            ccli = str(song.ccli)
+            response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+            setlist_as_list.append((ccli, 'G'))
+        #reset key for song2
+        ccli_str = str(song1.ccli)+'-G,'+str(song2.ccli)+'-G,'+str(song3.ccli)+'-G,'
+        response = self.client.get('/update-setlist/?reset='+str(song2.ccli)+'&ccli='+ccli_str)
+        #test that setlist session is good
+        setlist_as_list = self.client.session['setlist']
+        setlist_should_be = [(str(song1.ccli), 'G'), (str(song2.ccli),'B'), (str(song3.ccli), 'G')]
+        self.assertEqual(setlist_should_be, setlist_as_list)
+        #test that setlist object song order is good
+        current_setlist = self.client.session['current_setlist']
+        setlist_song_order = current_setlist.song_order
+        song_order_should_be = str(song1.ccli)+'-G,'+str(song2.ccli)+'-B,'+str(song3.ccli)+'-G'
+        self.assertEqual(setlist_song_order, song_order_should_be)
+        #reset key for song3
+        ccli_str = str(song1.ccli)+'-G,'+str(song2.ccli)+'-B,'+str(song3.ccli)+'-G,'
+        response = self.client.get('/update-setlist/?reset='+str(song3.ccli)+'&ccli='+ccli_str)
+        #test that setlist session is good
+        setlist_as_list = self.client.session['setlist']
+        setlist_should_be = [(str(song1.ccli), 'G'), (str(song2.ccli),'B'), (str(song3.ccli), 'C')]         
+        #test that setlist object song order is good
+        current_setlist = self.client.session['current_setlist']
+        setlist_song_order = current_setlist.song_order
+        song_order_should_be = str(song1.ccli)+'-G,'+str(song2.ccli)+'-B,'+str(song3.ccli)+'-C'
+        self.assertEqual(setlist_song_order, song_order_should_be)       
         
-        
+    def test_key_change_auth(self):
+        song1 = mommy.make(Song, ccli=1)
+        song2 = mommy.make(Song, ccli=2)
+        song3 = mommy.make(Song, ccli=3)
+        songs = [song1, song2, song3]
+        setlist_as_list = []
+        for song in songs:
+            ccli = str(song.ccli)
+            response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')
+            setlist_as_list.append((ccli, 'G'))
+        #change key for song2 from G to C     
+        ccli_str = str(song1.ccli)+'-G,'+str(song2.ccli)+'-G,'+str(song3.ccli)+'-G,'       
+        response = self.client.get('/update-setlist/?ccli-keychange='+str(song2.ccli)+'-C'+'&ccli='+ccli_str)
+        #test that setlist session is good
+        setlist_as_list = self.client.session['setlist']
+        setlist_should_be = [(str(song1.ccli), 'G'), (str(song2.ccli),'C'), (str(song3.ccli), 'G')]  
+        self.assertEqual(setlist_should_be, setlist_as_list)        
+        #test that setlistobject song order is good
+        current_setlist = self.client.session['current_setlist']
+        setlist_song_order = current_setlist.song_order
+        song_order_should_be = str(song1.ccli)+'-G,'+str(song2.ccli)+'-C,'+str(song3.ccli)+'-G'
+        self.assertEqual(setlist_song_order, song_order_should_be)              
+        #change key for song3 from G to B
+        ccli_str = str(song1.ccli)+'-G,'+str(song2.ccli)+'-C,'+str(song3.ccli)+'-B,'
+        response = self.client.get('/update-setlist/?ccli-keychange='+str(song3.ccli)+'-B'+'&ccli='+ccli_str)
+        #test that setlist session is good
+        setlist_as_list = self.client.session['setlist']
+        setlist_should_be = [(str(song1.ccli), 'G'), (str(song2.ccli),'C'), (str(song3.ccli), 'B')]         
+        self.assertEqual(setlist_should_be, setlist_as_list)
+        #test that setlist object song order is good
+        current_setlist = self.client.session['current_setlist']
+        setlist_song_order = current_setlist.song_order
+        song_order_should_be = str(song1.ccli)+'-G,'+str(song2.ccli)+'-C,'+str(song3.ccli)+'-B'
+        self.assertEqual(setlist_song_order, song_order_should_be)  
         
 # class StringToVerseParseTests(TestCase):
     # """

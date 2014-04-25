@@ -2031,7 +2031,6 @@ def push_setlist(request):
 
     #is it better to iterate through queryset or do initial load to list: list(queryset)
     current_setlist_songs = SetlistSong.objects.filter(setlist=current_setlist)
-    
     ministry_id = request.GET.get('ministry_id')
     save_stats = request.GET.get('save_stats')
     #normalize jquery boolean to python boolean
