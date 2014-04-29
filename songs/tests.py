@@ -80,7 +80,7 @@ class PublishSetlistAuth(TestCase):
         # profile = Profile(user=user) 
         # self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})    
 
-    def test_publish_send_to_ministry(self):
+    def test_publish_save_info_send_to_ministry(self):
         user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
         profile, created = Profile.objects.get_or_create(user=user) 
         self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})  
@@ -125,18 +125,66 @@ class PublishSetlistAuth(TestCase):
         self.assertEqual(True, profile2_setlist.exists())
         #test that setlistsong is also saved
         profile2_setlistsong = SetlistSong.objects.filter(setlist=profile2_setlist)
-        self.assertEqual(profile2_setlistsong.key, 'G')
+        self.assertEqual(profile2_setlistsong[0].key, 'G')
         self.assertEqual(True, profile2_setlistsong.exists())
         
+    def test_publish_no_save_send_to_ministry(self):
         #test send to ministry with no data save
-    
-#test publish setlist four cases. 
-#1. send to ministry, no data save
-#2. send to ministry, with data save
-#3. don't send to any, no data
-#4. don't send to any, with data save
-#5. no ministry to send to, no data
-#6. no ministry to send to, with data save
+        #should create new setlist object but should not create profilesong/details, or ministrysong/details
+        user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        profile, created = Profile.objects.get_or_create(user=user) 
+        self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})          
+        ministry = mommy.make(Ministry)
+        membership, created = MinistryMembership.objects.get_or_create(member=profile, ministry=ministry)
+        profile2 = mommy.make(Profile)
+        membership2, created = MinistryMembership.objects.get_or_create(member=profile2, ministry=ministry)
+        #test that there are two members in minsitry
+        self.assertEqual(2, len(MinistryMembership.objects.filter(ministry=ministry)))
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')   
+        #test that profile2 does not currently have setlist
+        profile2_setlist = Setlist.objects.filter(profile=profile2)
+        self.assertEqual(False, profile2_setlist.exists())
+        #publish setlist to ministry with saving data
+        response = self.client.get('/push-setlist/?ministry_id='+str(ministry.id)+'&save_stats=true')
+        #test popularity increase of song
+        song = Song.objects.get(ccli=ccli)
+        self.assertEqual(song.popularity, 2)
+        #test that copy of setlist saved to profile2
+        profile2_setlist = Setlist.objects.filter(profile=profile2)
+        self.assertEqual(True, profile2_setlist.exists())
+        
+    def test_publish_no_send_no_save(self):
+        #test publish ot nobody and to not save
+        user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        profile, created = Profile.objects.get_or_create(user=user) 
+        self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})   
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')  
+        response = self.client.get('/push-setlist/?ministry_id=none&save_stats=false')
+        #should not save any profile song
+        self.assertEqual(False, ProfileSong.objects.filter(profile=profile).exists())
+        #by not throwing error, this means no ministrysong was created as well
+        
+    def test_publish_no_send_but_save(self):
+        #test publish ot nobody but save usage data
+        user = User.objects.create_user('temp', 'temp@gmail.com', 'temp')
+        profile, created = Profile.objects.get_or_create(user=user) 
+        self.client.post('/accounts/login/', {'username':'temp', 'password':'temp'})   
+        song = mommy.make(Song)
+        ccli = str(song.ccli)
+        response = self.client.get('/update-setlist/?add=true&ccli='+ccli+'&key=G')  
+        response = self.client.get('/push-setlist/?ministry_id=none&save_stats=true')
+        #should save profile song
+        profilesong_qs = ProfileSong.objects.filter(profile=profile)
+        self.assertEqual(True, profilesong_qs.exists())
+        #should save profilesongdetails
+        profilesongdetails_qs = ProfileSongDetails.objects.filter(profilesong=profilesong_qs[0])
+        self.assertEqual(True, profilesongdetails_qs.exists())
+        #by not throwing error, this means no ministrysong was created as well        
+        
         
 class UpdateSetlistAuth(TestCase):       
     def setUp(self):
