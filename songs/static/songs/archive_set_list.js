@@ -1,5 +1,7 @@
 
 $(document).ready(function () {
+//handles the functionality for the modals in the archive setlist page
+//including details, delete archived setlist, and reuse setlist. 
 
     $('.modal-setlist-details').click(function(){
         var $setlist_id = $(this).attr('name')

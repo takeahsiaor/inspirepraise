@@ -67,9 +67,17 @@
             <li><a href="{% url 'registration_register'%}">Register</a></li>
 
             {% else %}
-            <li><p style="padding-top:15px; padding-right:10px;">
-                Welcome <a href="{% url 'songs.views.profile' %}">{{user.email}}</a></p></li>
-            <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                Welcome, {{user.email}} <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="{% url 'songs.views.profile' %}">Your Profile</a></li>
+                    <li><a href="#">Your song usage history</a></li>
+                    <li><a href="#">Your favorite songs</a></li>
+                    <li><a href="{% url 'songs.views.deactivate_account_view' %}">Deactivate account</a></li>
+                    <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
+                </ul>
+            </li>
             {% endif %}
             
         </ul>

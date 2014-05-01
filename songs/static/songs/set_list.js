@@ -213,7 +213,28 @@ $(document).ready(function () {
             $(response).appendTo('#modal-body');
         });
     });
-    
+   
+    //once this song usage button is clicked, will decide wehther to send it to ministry or profile details view
+    $('.modal-song-details').click(function(){
+        ccli = $(this).attr('name');
+        song_context = $('.song-stats-context').val()
+        
+        if (song_context == 0 || song_context == undefined ){ //if context is profile or not logged in
+            $.get('/song-usage-details-profile/', {'ccli':ccli}, function(response){
+                $('#usage-details-content').empty();
+                $(response).appendTo('#usage-details-content');
+            });
+        }
+        else {
+            $.get('/song-usage-details-ministry/', {'ccli':ccli, 'ministry_id':song_context}, function(response){
+                $('#usage-details-content').empty();
+                $(response).appendTo('#usage-details-content');
+            });
+        }
+        
+        
+    });
+
     
     $('.refresh-chords').click(function(){
         var button_clicked = $(this);

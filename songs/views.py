@@ -635,6 +635,28 @@ def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse('songs.views.home'))
 
+    
+@login_required
+def deactivate_account_view(request):
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    memberships = MinistryMembership.objects.filter(member = profile)
+    return render(request, 'deactivate_account.html', {'user':user, 'profile':profile,
+        'memberships':memberships})
+    
+@login_required
+def deactivate_account_confirm(request):
+    """
+    Currently will just delete the user: not very good since all song stats will also be lost
+    
+    In the future, this will only set the is_active property to false.
+    Must change login to handle if user is not active to reactivate them yet not interrupt
+    how django-registration handles activation.
+    """
+    user = request.user
+    user.delete()
+    logout(request)
+    return HttpResponseRedirect(reverse('songs.views.home'))
 
 def forbidden(request):
     return render(request, '403.html')
@@ -922,6 +944,7 @@ def lookup(request):
                     num_old = num_old + 1
                 songs.append(song)
             return render(request, template, {'songs':songs, 'url':url, 'num_new':num_new, 'num_old':num_old, 'popup':popup, 'query':query})
+    
     return render(request, template, {'errors':errors, 'popup':popup})
 
 
@@ -1036,7 +1059,10 @@ def invite_to_ministry(request, ministry_code):
                 #test if user already exists. if so, then just send invitation no need to create user.
                 try:
                     user = User.objects.get(email=email)
-                    password = ''
+                    if user.is_active: #this should mean they have already logged in
+                        password = ''
+                    else: #never logged in
+                        password = user.username[:10] 
                 except:
                     #create new user if none exists
                     username = get_md5_hexdigest(email)
@@ -1213,6 +1239,16 @@ def leave_ministry(request, ministry_code):
     
     return HttpResponseRedirect(reverse('songs.views.profile'))
 
+
+@login_required
+def profile(request):
+    user = request.user      
+    #attempt to fix the logging in of created superuser and having no profile
+    profile = Profile.objects.get(user=user)
+    common_songs = ProfileSong.objects.filter(profile=profile).order_by('-times_used')[:10]
+    recent_songs = ProfileSong.objects.filter(profile=profile).order_by('-last_used')[:5]
+    return render(request, 'profile.html', {'profile': profile, 'common_songs':common_songs, 'recent_songs':recent_songs})
+
 #a lot of repeated code between details for ministry and details for profile. refactor!
 @login_required
 def song_usage_details_ministry(request):
@@ -1223,114 +1259,167 @@ def song_usage_details_ministry(request):
     ccli = request.GET.get('ccli')
     ministry = Ministry.objects.get(id=ministry_id)
     song = Song.objects.get(ccli=int(ccli))
-    
-    ministrysong = MinistrySong.objects.get(ministry=ministry, song=song)
-    
-    #get all details for every time song was done for keys
-    details = MinistrySongDetails.objects.filter(ministrysong=ministrysong).order_by('-date')
-    key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
-    key_list = list(key_list) #need to convert it to list otherwise count won't work later
-    total = len(key_list)
-    distinct_keys = sorted(list(set(key_list)))
-    key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
-    for distinct_key in distinct_keys:
-        number = key_list.count(str(distinct_key))
-        percent = number/float(total) * 100
-        percent = '%.2f' % percent #convert to string and truncate to two decimal places
-        key_percentage_list.append((distinct_key,percent))       
+    try:
+        ministrysong = MinistrySong.objects.get(ministry=ministry, song=song)
+    except:
+        ministrysong = False
         
-    start = time.clock()
-    global_key_percentage_list = get_global_key_stats(song)
-    elapsed = time.clock() - start
-    
-    #only get details of only last 5 usage instances
-    #gets song context for each of the ministrysongdetails in terms of song titles
-    details = details[:5]
-    song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
-    for detail in details:
-        raw_song_contexts = []
-        context_string = detail.song_context
-        context_list = context_string.split(',')
-        for ccli_key in context_list:
-            ccli_key = ccli_key.split('-')
-            ccli = ccli_key[0]
-            key = ccli_key[1]
-            title = Song.objects.get(ccli=int(ccli)).title
-            partial_str = title + ' ('+key+')'
-            raw_song_contexts.append(partial_str)
-        full_str = ', '.join(raw_song_contexts)
-        song_contexts.append(full_str)
-    
-    #zip of Latest 5 ProfileSongDetails and strings of song title and key
-    details_contexts = zip(details, song_contexts)
-    # print song_contexts
-    print elapsed
-    return render(request, 'format_as_html.html', {'song':song, 'ministrysong':ministrysong, 
-        'details_contexts':details_contexts, 'percentages':key_percentage_list, 
-        'global_percentages':global_key_percentage_list, 'song_stats_details_ministry':True})
+    if ministrysong: #if this ministry has done this song before
+        #get all details for every time song was done for keys
+        details = MinistrySongDetails.objects.filter(ministrysong=ministrysong).order_by('-date')
+        key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
+        key_list = list(key_list) #need to convert it to list otherwise count won't work later
+        total = len(key_list)
+        distinct_keys = sorted(list(set(key_list)))
+        key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
+        for distinct_key in distinct_keys:
+            number = key_list.count(str(distinct_key))
+            percent = number/float(total) * 100
+            percent = '%.2f' % percent #convert to string and truncate to two decimal places
+            key_percentage_list.append((distinct_key,percent))       
+            
+        start = time.clock()
+        global_key_percentage_list = get_global_key_stats(song)
+        elapsed = time.clock() - start
         
-@login_required
-def profile(request):
-    user = request.user      
-    #attempt to fix the logging in of created superuser and having no profile
-    profile = Profile.objects.get(user=user)
-    common_songs = ProfileSong.objects.filter(profile=profile).order_by('-times_used')[:10]
-    recent_songs = ProfileSong.objects.filter(profile=profile).order_by('-last_used')[:5]
-    return render(request, 'profile.html', {'profile': profile, 'common_songs':common_songs, 'recent_songs':recent_songs})
+        #only get details of only last 5 usage instances
+        #gets song context for each of the ministrysongdetails in terms of song titles
+        details = details[:5]
+        song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+        for detail in details:
+            raw_song_contexts = []
+            context_string = detail.song_context
+            context_list = context_string.split(',')
+            for ccli_key in context_list:
+                ccli_key = ccli_key.split('-')
+                ccli = ccli_key[0]
+                key = ccli_key[1]
+                title = Song.objects.get(ccli=int(ccli)).title
+                partial_str = title + ' ('+key+')'
+                raw_song_contexts.append(partial_str)
+            full_str = ', '.join(raw_song_contexts)
+            song_contexts.append(full_str)
+        
+        #zip of Latest 5 ProfileSongDetails and strings of song title and key
+        details_contexts = zip(details, song_contexts)
+        print elapsed
+        return render(request, 'format_as_html.html', {'song':song, 'ministrysong':ministrysong, 
+            'details_contexts':details_contexts, 'percentages':key_percentage_list, 
+            'global_percentages':global_key_percentage_list, 'song_stats_details_ministry':True})
+            
+    else:#since there are no ministrysongs, might as well get profilesongs for global statistics
+        #global statistics held in profile detail html generation
+        #gets details for last five instances this song was used globally
+        details = ProfileSongDetails.objects.filter(profilesong__song=song).order_by('-date')[:5]
+        
+        song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+        for detail in details:
+            raw_song_contexts = []
+            context_string = detail.song_context
+            context_list = context_string.split(',')
+            for ccli_key in context_list:
+                ccli_key = ccli_key.split('-')
+                ccli = ccli_key[0]
+                key = ccli_key[1]
+                title = Song.objects.get(ccli=int(ccli)).title
+                partial_str = title + ' ('+key+')'
+                raw_song_contexts.append(partial_str)
+            full_str = ', '.join(raw_song_contexts)
+            song_contexts.append(full_str)        
+        global_key_percentage_list = get_global_key_stats(song)
+        #zip of Latest 5 ProfileSongDetails and strings of song title and key
+        details_contexts = zip(details, song_contexts)         
+        return render(request, 'format_as_html.html', {'song':song, 
+            'details_contexts':details_contexts, 
+            'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})       
 
-@login_required
 def song_usage_details_profile(request):
     """
-    This handles the logic for generation of html to display usage stats for a given ccli
+    This handles the logic for generation of html to display usage stats for a given ccli 
+    Used in search results for both logged in and non logged in users at hte moment
+    Also handles if there logged in but no profilesong belonging to user's exists.
     """
-    user = request.user
-    profile = Profile.objects.get(user=user)
     ccli = request.GET.get('ccli')
     song = Song.objects.get(ccli=int(ccli))
-    profilesong = ProfileSong.objects.get(profile=profile, song=song)
     
-    #get all details for every time song was done for keys
-    details = ProfileSongDetails.objects.filter(profilesong=profilesong).order_by('-date')
-    key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
-    key_list = list(key_list) #need to convert it to list otherwise count won't work later
-    total = len(key_list)
-    distinct_keys = sorted(list(set(key_list)))
-    key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
-    for distinct_key in distinct_keys:
-        number = key_list.count(str(distinct_key))
-        percent = number/float(total) * 100
-        percent = '%.2f' % percent #convert to string and truncate to two decimal places
-        key_percentage_list.append((distinct_key,percent))       
+    if request.user.is_authenticated():
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        logged_in = True
+    else:
+        logged_in = False
         
-    start = time.clock()
-    global_key_percentage_list = get_global_key_stats(song)
-    elapsed = time.clock() - start
+    try:
+        profilesong = ProfileSong.objects.get(profile=profile, song=song)
+    except:
+        profilesong = False
+        
+    if logged_in and profilesong:
+        #get all details for every time song was done for keys
+        details = ProfileSongDetails.objects.filter(profilesong=profilesong).order_by('-date')
+        key_list = details.values_list('key', flat=True).order_by('key') #gets list of all keys done
+        key_list = list(key_list) #need to convert it to list otherwise count won't work later
+        total = len(key_list)
+        distinct_keys = sorted(list(set(key_list)))
+        key_percentage_list = [] #will be a list of tuples of form (key, percent as string)
+        for distinct_key in distinct_keys:
+            number = key_list.count(str(distinct_key))
+            percent = number/float(total) * 100
+            percent = '%.2f' % percent #convert to string and truncate to two decimal places
+            key_percentage_list.append((distinct_key,percent))     
+            
+        #only get details of only last 5 usage instances
+        #gets song context for each of the profilesongdetails in terms of song titles
+        details = details[:5]
+        song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+        for detail in details:
+            raw_song_contexts = []
+            context_string = detail.song_context
+            context_list = context_string.split(',')
+            for ccli_key in context_list:
+                ccli_key = ccli_key.split('-')
+                ccli = ccli_key[0]
+                key = ccli_key[1]
+                title = Song.objects.get(ccli=int(ccli)).title
+                partial_str = title + ' ('+key+')'
+                raw_song_contexts.append(partial_str)
+            full_str = ', '.join(raw_song_contexts)
+            song_contexts.append(full_str)
+            
+        global_key_percentage_list = get_global_key_stats(song)
+        #zip of Latest 5 ProfileSongDetails and strings of song title and key
+        details_contexts = zip(details, song_contexts)        
+        return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
+            'details_contexts':details_contexts, 'percentages':key_percentage_list, 
+            'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})
+
+    else:
+        #ugh so much repeated code
+        #gets details for last five instances this song was used globally
+        details = ProfileSongDetails.objects.filter(profilesong__song=song).order_by('-date')[:5]
+        
+        song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+        for detail in details:
+            raw_song_contexts = []
+            context_string = detail.song_context
+            context_list = context_string.split(',')
+            for ccli_key in context_list:
+                ccli_key = ccli_key.split('-')
+                ccli = ccli_key[0]
+                key = ccli_key[1]
+                title = Song.objects.get(ccli=int(ccli)).title
+                partial_str = title + ' ('+key+')'
+                raw_song_contexts.append(partial_str)
+            full_str = ', '.join(raw_song_contexts)
+            song_contexts.append(full_str)        
+        global_key_percentage_list = get_global_key_stats(song)
+        #zip of Latest 5 ProfileSongDetails and strings of song title and key
+        details_contexts = zip(details, song_contexts)         
+        return render(request, 'format_as_html.html', {'song':song, 
+            'details_contexts':details_contexts, 
+            'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})        
+       
     
-    #only get details of only last 5 usage instances
-    #gets song context for each of the profilesongdetails in terms of song titles
-    details = details[:5]
-    song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
-    for detail in details:
-        raw_song_contexts = []
-        context_string = detail.song_context
-        context_list = context_string.split(',')
-        for ccli_key in context_list:
-            ccli_key = ccli_key.split('-')
-            ccli = ccli_key[0]
-            key = ccli_key[1]
-            title = Song.objects.get(ccli=int(ccli)).title
-            partial_str = title + ' ('+key+')'
-            raw_song_contexts.append(partial_str)
-        full_str = ', '.join(raw_song_contexts)
-        song_contexts.append(full_str)
-    
-    #zip of Latest 5 ProfileSongDetails and strings of song title and key
-    details_contexts = zip(details, song_contexts)
-    # print song_contexts
-    print elapsed
-    return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
-        'details_contexts':details_contexts, 'percentages':key_percentage_list, 
-        'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})
     
 @login_required
 def edit_profile(request):
@@ -2490,7 +2579,15 @@ def push_chords_to_database(request):
     into database. 
     """
     #should add function to load song info first if ccli doesn't exist in database
-    file_list = os.listdir('D:/dropbox/django/songs_chordpro_checkedwguitar/')
+    try: #for D drive
+        dir = 'D:/dropbox/django/songs_chordpro_checkedwguitar/'
+        file_list = os.listdir(dir)
+    except WindowsError: #for C drive
+        dir = 'C:/dropbox/django/songs_chordpro_checkedwguitar/'
+        file_list = os.listdir(dir)
+    except: #for deploy, doesn't work
+        dir = '/home/ubuntu/songs_chordpro_checkedwguitar'
+        file_list = os.listdir(dir)
     ccli_list = []
     count = 0
     for file_name in file_list:
@@ -2500,7 +2597,7 @@ def push_chords_to_database(request):
         song_as_qs = Song.objects.filter(ccli=int(ccli))
         if song_as_qs.count() == 0: #if no song exists in database with that ccli look it up from ccli
             check_song(ccli)
-        f = open('D:/dropbox/django/songs_chordpro_checkedwguitar/' + ccli + '.cho', 'r')
+        f = open(dir + ccli + '.cho', 'r')
         chords_from_cho = f.read()
         song_as_qs.update(chords=chords_from_cho)
         f.close()

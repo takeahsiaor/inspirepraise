@@ -243,6 +243,9 @@ View song usage statistics from:
                             <span class="glyphicon glyphicon-download-alt"></span> Chords</button>
                         <button type="button" class="btn btn-default download-lyrics" name="{{song.ccli}}">
                             <span class="glyphicon glyphicon-download-alt"></span> Lyrics</button>
+                        <button type="button" data-toggle="modal" data-target="#usage-details-modal" 
+                            class="btn btn-default modal-song-details" name="{{song.ccli}}">
+                            <span class="glyphicon glyphicon-stats"></span> Stats</button>
                     {% if setlist_song.notes %}
                         <button type="button" class="btn btn-success song-note" id="song-note-button-{{song.ccli}}" name="{{song.ccli}}" 
                             data-toggle="modal" data-target="#song-note-modal-{{song.ccli}}"><span class="glyphicon glyphicon-comment"></span> 
@@ -250,7 +253,7 @@ View song usage statistics from:
                     {% else %}
                          <button type="button" class="btn btn-default song-note" id="song-note-button-{{song.ccli}}" name="{{song.ccli}}" 
                             data-toggle="modal" data-target="#song-note-modal-{{song.ccli}}"><span class="glyphicon glyphicon-comment"></span> 
-                            Add/Edit Notes</button>                   
+                            Notes</button>                   
                     {% endif %}
                     </div>
                     
@@ -433,6 +436,15 @@ View song usage statistics from:
         <button type="button" class="btn btn-success tag-confirm">Tag!</button>
         <button type="button" class="btn btn-info cancel" data-dismiss="modal">Cancel</button>
       </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-- usage details modal -->
+<div class="modal fade" id="usage-details-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="usage-details-content">
+
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->

@@ -28,6 +28,7 @@
 
 <div class="row">
     <div class="col-md-12">
+        <a class="btn btn-info" href="{% url 'songs.views.profile' %}">Return to Profile</a>
 {% if membership.admin %}
         <a class="btn btn-success" href="{% url 'songs.views.invite_to_ministry' ministry.id %}">
             <span class="glyphicon glyphicon-envelope"></span> Invite to join!</a>
@@ -94,7 +95,8 @@ used songs are for this ministry!
         <button type="button" class="btn btn-default common-songs-details" data-toggle="modal" style="margin-bottom:5px"
             data-target="#song-stats-details" id="{{recent_song.song.ccli}}" name="{{ministry.id}}">
         {{recent_song.last_used|date}} - {{recent_song.song.title|truncatechars:30}} 
-        </button><br>
+        </button>
+        <br>
         {% endfor %}
 
     {% endif %}

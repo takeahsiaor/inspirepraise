@@ -1,24 +1,20 @@
 {% if song_stats_details_profile %}
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="song-stats-label">{{song.title}} - {{profilesong.profile.user.email}}</h4>
+        <h4 class="modal-title" id="song-stats-label">
+            {{song.title}} {% if profilesong%}- {{profilesong.profile.user.email}}{%endif%}</h4>
       </div>
       <div class="modal-body" id="song-stats-modal-body">
-<!--         <div class="row">
-            <div class="col-md-12">
-                <dl class="dl-horizontal">
-                    <dt>Number of times used:</dt>
-                    <dd>{{profilesong.times_used}}</dd>
-                    <dt>Last used on:</dt>
-                    <dd>{{profilesong.last_used|date}}</dd>
-                </dl>
-            </div>
-        </div> -->
         <div class="row">
             <div class="col-md-12">
+            {% if details_contexts %}
             <ul class="list-group">
                 <li class="list-group-item list-group-item-info">
-                <strong>Dates and songs <em>{{song.title}}</em> was last used with</strong>
+                {% if profilesong %}
+                <strong>Dates and songs <em>{{song.title}}</em> was last used with by you:</strong>
+                {% else %}
+                <strong>Dates and songs <em>{{song.title}}</em> was last used with by others:</strong>                
+                {% endif %}
                 </li>
             {% for detail, context in details_contexts %}
                 <li class="list-group-item">
@@ -33,6 +29,10 @@
                 </li>
             {% endfor %}
             </ul>
+            
+            {% else %}
+            <p class="alert alert-info">Nobody has used this song yet so there is no usage information. Be the first!</p>
+            {% endif %}
             </div>
         </div>
         {% if percentages %}
@@ -84,7 +84,7 @@
             <div class="col-md-12">
             <ul class="list-group">
                 <li class="list-group-item list-group-item-info">
-                <strong>Dates and songs <em>{{song.title}}</em> was last used with</strong>
+                <strong>Dates and songs <em>{{song.title}}</em> was last used with by this ministry:</strong>
                 </li>
             {% for detail, context in details_contexts %}
                 <li class="list-group-item">

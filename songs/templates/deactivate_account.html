@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+
+
+
+{% block title %} | Deactivate Account{% endblock %}
+
+{% block content %}
+
+<h1>Confirm Deactivation of Account</h1>
+
+<div class="alert alert-danger">
+    <p>
+    Are you sure you want to deactivate your account? Once deactivated, you cannot retrieve it so you'll have to
+    re-register if you want all the benefits of InspirePraise again.
+    </p>
+    <br>
+    You'll lose the following features:
+    <ul>
+        <li>Info on past keys you've used for songs</li>
+        <li>Info on how many times you've used a song</li>
+        <li>Info on when you last used a song</li>
+        <li>What other songs you use with a given song</li>
+        <li>Setlist notes and song notes</li>
+        <li>Setlist archiving</li>
+    </ul>
+</div>
+
+{% if memberships %}
+
+You'll also miss out on setlists from these ministries:
+    <ul class="list-group ">
+        {% for membership in memberships %}
+        <li class="list-group-item ">
+            {{membership.ministry.name}}
+        </li>
+        {%endfor%}
+    </ul>
+
+{% endif %}
+
+<a href="{% url 'songs.views.deactivate_account_confirm' %}" class="btn btn-danger">Deactivate!</a>
+<a href="{% url 'songs.views.home' %}" class="btn btn-success">Stay!</a>
+
+{% endblock %}

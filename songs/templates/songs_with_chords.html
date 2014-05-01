@@ -169,16 +169,15 @@ View song usage info from:
             
             {% if song.chords %}
             <div class="row">
-                <div class="col-md-1">
-                    <p>Transpose</p>
-                </div>
                 <div class="col-md-2">
                     <select class="form-control transpose-value" id="{{song.ccli}}-transpose">
                         {{option_list|safe}}
                     </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-10">
                 <button type="button" data-toggle="modal" data-target="#myModal" class="btn btn-default modal-chord-preview" name="{{song.ccli}}" id="{{song.ccli}}-modal">Preview Chords</button>
+                <button type="button" data-toggle="modal" data-target="#usage-details-modal" 
+                    class="btn btn-default modal-song-details" name="{{song.ccli}}">View Usage Info</button>
                 <button type="button" class="btn btn-default download-single" name="{{song.ccli}}">Download Chords</button>
                 <button type="button" class="btn btn-default download-lyrics" name="{{song.ccli}}">Download Lyrics</button>
                 </div>
@@ -209,6 +208,8 @@ View song usage info from:
 {% else %}
     <p>No songs matched your search criteria.</p>
 {% endif %}
+
+<!-- chord display modal -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -225,4 +226,14 @@ View song usage info from:
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+
+<!-- usage details modal -->
+<div class="modal fade" id="usage-details-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="usage-details-content">
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 {% endblock%}
