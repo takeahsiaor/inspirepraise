@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+{% if messages %}
+{% for message in messages %}
+    {% if message.level < 26 %}
+    <div class="alert alert-success">
+        {{ message }} 
+    </div>
+    {% endif %}
+    {% if message.level > 26 %}
+    <div class="alert alert-warning">
+        {{ message }} 
+    </div>
+    {% endif %}
+{% endfor %}
+{% endif %}
+
 <div class="jumbotron">
 {% if not user.is_authenticated %}
     <h1>

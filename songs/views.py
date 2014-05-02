@@ -9,6 +9,7 @@ from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm,
 from songs.forms import MinistryEditForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
 from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
+from registration.models import RegistrationProfile
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, strip_tags
@@ -18,7 +19,7 @@ from django.db.models import Sum, Q, F
 from django.contrib.auth import login, authenticate, logout #these are functions
 from django.contrib.auth import views #these are views
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.signals import user_logged_in, user_login_failed
 from itertools import chain, groupby
 from operator import itemgetter
 from registration.signals import user_activated
@@ -608,16 +609,39 @@ def login_on_activation(sender, user, request, **kwargs):
     user.backend = 'django.contrib.auth.backends.ModelBackend' 
     login(request, user)
 
+
 # Registers the function with the django-registration user_activated signal
 user_activated.connect(login_on_activation)
 # after the logged in signal is sent, will call retreive_setlist
 user_logged_in.connect(retrieve_setlist)
 user_logged_in.connect(display_push_setlist)
 
+
 #login url comes here. checks for remember me option then sends off to 
 #default django login view
 def login_user(request, *args, **kwargs):
     if request.method == 'POST':
+        #this portion is to check if user needs to be reactivated
+        username = request.POST.get('username')
+        user_qs = User.objects.filter(email=username)
+        if user_qs: #user exists
+            user_object = user_qs[0]
+            if not user_object.is_active: #user is not active
+                #make active
+                user_object.is_active = True
+                user_object.save()
+                registration_profile_qs = RegistrationProfile.objects.filter(user_id=user_object.id)
+                
+                #if sent registration email but logs in directly
+                if registration_profile_qs.exists() and registration_profile_qs[0].activation_key != "ALREADY_ACTIVATED": 
+                    #update registration profile
+                    #this shouldn't send a "Reactivated message" but more just welcome
+                    registration_profile_qs.delete()
+                    message = "Congratulations! You've activated your account! Welcome to InspirePraise! "
+                    messages.success(request, message)
+                else:#this is if user is strictly reactivating rather than activating for the first time
+                    message = "You've just reactivated your account! Welcome back to InspirePraise! We've missed you!"
+                    messages.success(request, message)
         if not request.POST.get('remember_me', None):
             request.session.set_expiry(0)
     return views.login(request, *args, **kwargs)
@@ -647,14 +671,16 @@ def deactivate_account_view(request):
 @login_required
 def deactivate_account_confirm(request):
     """
-    Currently will just delete the user: not very good since all song stats will also be lost
-    
-    In the future, this will only set the is_active property to false.
+    This will only set the is_active property to false.
     Must change login to handle if user is not active to reactivate them yet not interrupt
     how django-registration handles activation.
     """
     user = request.user
-    user.delete()
+    user.is_active = False
+    user.save()
+    message = "You've just deactivated your account! Sorry to see you go but remember, you can always come back\
+        by simply logging back in. Hope to see you again soon!"
+    messages.warning(request, message)
     logout(request)
     return HttpResponseRedirect(reverse('songs.views.home'))
 
@@ -697,6 +723,7 @@ def is_parsable(request):
     
 def import_songverse_from_file(request):
     """
+    For many verse groupings for one song: NOT many songs for one verse grouping
     takes a dictionary with key being ccli as string and value being list of verse strings
     tags them with each other.
     """
@@ -2169,8 +2196,8 @@ def push_setlist(request):
     memberships = MinistryMembership.objects.filter(ministry=ministry)
     for membership in memberships:
         profile = membership.member
-        #prevent setlist push to self
-        if profile == current_profile:
+        #prevent setlist push to self and to deactivated users
+        if profile == current_profile or not profile.user.is_active:
             continue
         #copy current_setlist
         new_setlist = Setlist(profile=profile, notes=current_setlist.notes, created_by=ministry.name, 
