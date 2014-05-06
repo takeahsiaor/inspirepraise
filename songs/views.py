@@ -1,6 +1,6 @@
 # Create your views here.
 # ooga booga
-import time
+import time, threading
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
@@ -623,14 +623,14 @@ def login_user(request, *args, **kwargs):
     if request.method == 'POST':
         #this portion is to check if user needs to be reactivated
         username = request.POST.get('username')
-        user_qs = User.objects.filter(email=username)
-        if user_qs: #user exists
-            user_object = user_qs[0]
-            if not user_object.is_active: #user is not active
+        password = request.POST.get('password')
+        user = authenticate(username=username, password=password)
+        if user: #user exists and authenticates properly
+            if not user.is_active: #user is not active
                 #make active
-                user_object.is_active = True
-                user_object.save()
-                registration_profile_qs = RegistrationProfile.objects.filter(user_id=user_object.id)
+                user.is_active = True
+                user.save()
+                registration_profile_qs = RegistrationProfile.objects.filter(user_id=user.id)
                 
                 #if sent registration email but logs in directly
                 if registration_profile_qs.exists() and registration_profile_qs[0].activation_key != "ALREADY_ACTIVATED": 
@@ -678,6 +678,30 @@ def deactivate_account_confirm(request):
     user = request.user
     user.is_active = False
     user.save()
+    profile = Profile.objects.get(user=user)
+    memberships = MinistryMembership.objects.filter(member=profile) #all memberships in all ministries
+    for membership in memberships:
+        #test if admin, if not, then just move on to the next membership
+        if not membership.admin:
+            continue
+        #test if ministry has other admins
+        ministry = membership.ministry
+        num_members = MinistryMembership.objects.filter(ministry=ministry).count()
+        num_admins = MinistryMembership.objects.filter(ministry=ministry, admin=True).count()
+        if num_admins == 1 and num_members > 1: #this means that currnet user is the only admin
+            print "will transfer admin rights for %s" % ministry.name
+            #give rights to oldest member
+            #must be at least the two earliest members since i'm not deleting the membership of current admin
+            #so if 1st member is admin, then second will be the one to transfer
+            earliest_two_members = MinistryMembership.objects.filter(ministry=ministry).order_by('join_date')[:2]
+            for earliest_member in earliest_two_members:
+                if earliest_member == membership:
+                    continue
+                else:
+                    earliest_member.admin = True
+                    earliest_member.save()
+                    print "admin for %s transferred to %s" % (earliest_member.ministry.name, earliest_member.member.user.email)
+        
     message = "You've just deactivated your account! Sorry to see you go but remember, you can always come back\
         by simply logging back in. Hope to see you again soon!"
     messages.warning(request, message)
@@ -749,6 +773,64 @@ def import_songverse_from_file(request):
     print "number of successful imports"
     print keep_track
     return HttpResponseRedirect(reverse('songs.views.success'))
+    
+class FuncThread(threading.Thread):
+    def __init__(self, target, *args):
+        self._target = target
+        self._args = args
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        self._target(*self._args)
+        
+def import_versesongs_from_csv(request):
+    """
+    1st col:Verse grouping
+    other cols: song cclis separated by commas
+    Takes the verse grouping makes sure it's parsable into verse objects then tags the songs with the verses
+    """
+    f = open("C:/dropbox/django/verse_groupings_to_songs_test.csv", 'r')
+    rows = [] #list of lists of the form [verse grouping string, ccli, ccli]
+    for line in f:
+        line = line.strip()
+        cols = line.split(',')
+        row = []
+        for col in cols:
+            if col == '':
+                continue
+            row.append(col)
+        rows.append(row)
+    #2N algorithm but whatever, one time use utility for not many entries
+    #acceptable for the sake of readability
+    good_count = 0
+    bad_count = 0
+    ccli_dne = []
+    for row in rows:
+        verse_string = row[0]
+        parsable = test_parsable(verse_string)
+        if parsable:
+            row.pop(0) # eliminates the verse string from the list so it's only a list of cclis now
+            good_count = good_count +1
+            for ccli in row:
+                does_not_exist = check_song(ccli)
+                if does_not_exist:
+                    ccli_dne.append(ccli)
+                    continue
+                song = Song.objects.get(ccli=int(ccli))
+                verse_id_list = parse_string_to_verses(verse_string)
+                #running into problems that are related to python getting ahead of mysql i think
+                # popularities are getting all screwed up
+                # t1 = FuncThread(link_song_to_verses, song, verse_id_list)
+                # t1.start()
+                # t1.join()
+                link_song_to_verses(song, verse_id_list)
+        else:
+            bad_count = bad_count + 1
+            print "unparsable %s" % verse_string
+    print good_count
+    print bad_count
+    return HttpResponseRedirect(reverse('songs.views.success'))            
+    
     
 def worshiptogether(request):
     #might need to redo import. weird stuff going on. 5496 song verses, 1598 songs with word to worship
@@ -1033,7 +1115,8 @@ def accept_ministry_invitation(request):
         msg = "Congrats! You're now a part of the %s ministry group! Jump up and down!" % ministry.name
         messages.success(request, msg)
         if not user.is_active:#this means its user's first time logging in
-            messages.success(request, "Remember to change your password when you get a chance!")
+            messages.success(request, "If this is your first time logging in, \
+                remember to change your password when you get a chance!")
             user.is_active = True
             user.save()
         profile, created = Profile.objects.get_or_create(user=user)
@@ -1163,14 +1246,16 @@ def ministry_admin_rights(request):
 @login_required
 def ministry_profile(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
-    members_memberships = MinistryMembership.objects.filter(ministry=ministry) #queryset of membership objects
+    members_memberships = MinistryMembership.objects.filter(ministry=ministry, 
+        member__user__is_active=True).order_by('join_date') #queryset of active membership objects
     current_user = request.user
     profile = Profile.objects.get(user=current_user)
     try:
         membership = MinistryMembership.objects.get(member = profile, ministry=ministry)
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
-    admins = MinistryMembership.objects.filter(ministry=ministry, admin=True)
+    #queryset of active admins
+    admins = MinistryMembership.objects.filter(ministry=ministry, admin=True, member__user__is_active=True) 
     common_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-times_used')[:10]
     recent_songs = MinistrySong.objects.filter(ministry=ministry).order_by('-last_used')[:5]
     return render(request, 'ministry_profile.html', {'ministry':ministry, 'membership':membership, 'admins':admins,
@@ -1246,6 +1331,7 @@ def leave_ministry(request, ministry_code):
     #get number of members in ministry
     ministry = Ministry.objects.get(id=ministry_code)
     number_of_members = MinistryMembership.objects.filter(ministry=ministry).count()
+    num_admins = Ministrymembership.objects.filter(ministry=ministry, admin=True).count()
     print number_of_members
     user = request.user
     profile = Profile.objects.get(user=user)
@@ -1257,7 +1343,7 @@ def leave_ministry(request, ministry_code):
         print 'deleted ministry here!'
         ministry.delete()
         messages.success(request, "Since you were the last member, the ministry was deleted. Cleanin' house baby!")
-    elif admin: #if more than 1 member and you are admin, transfer rights
+    elif admin and num_admins > 1: #if more than 1 member and you are admin, transfer rights
         print 'transfer admin rights'
         earliest_member = MinistryMembership.objects.filter(ministry=ministry).order_by('join_date')[0]
         earliest_member.admin = True

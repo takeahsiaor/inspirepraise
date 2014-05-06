@@ -179,19 +179,19 @@ used songs are for this ministry!
         {% else %}
         Select the following members you wish to give admin rights:
             {% for mm in members_memberships %}
-            {% if not mm.admin %}
-            <div class="checkbox">
-            <label>
-                <input type="checkbox" class="give-admin-checkbox" name="{{mm.id}}">{{mm.member.user.email}}
-            </label>
-            </div>
-            {% else %}
-            <div class="checkbox">
-            <label>
-                <input type="checkbox" name="{{mm.id}}" disabled><em>{{mm.member.user.email}} (admin)</em>
-            </label>
-            </div>
-            {% endif %}
+                {% if not mm.admin %}
+                <div class="checkbox">
+                <label>
+                    <input type="checkbox" class="give-admin-checkbox" name="{{mm.id}}">{{mm.member.user.email}}
+                </label>
+                </div>
+                {% else %}
+                <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="{{mm.id}}" disabled><em>{{mm.member.user.email}} (admin)</em>
+                </label>
+                </div>
+                {% endif %}
             {% endfor %}
         {% endif %}
         </div>
@@ -230,13 +230,13 @@ used songs are for this ministry!
         {% else %}
         Select the following admins you wish to revoke admin rights from:
             {% for admin in admins %}
-            {% if not admin.member.user.email == membership.member.user.email %}
-            <div class="checkbox">
-            <label>
-                <input type="checkbox" class="revoke-admin-checkbox" name="{{admin.id}}">{{admin.member.user.email}}
-            </label>
-            </div>
-            {% endif %}
+                {% if not admin.member.user.email == membership.member.user.email %}
+                <div class="checkbox">
+                <label>
+                    <input type="checkbox" class="revoke-admin-checkbox" name="{{admin.id}}">{{admin.member.user.email}}
+                </label>
+                </div>
+                {% endif %}
             {% endfor %}
         {% endif %}
         </div>
