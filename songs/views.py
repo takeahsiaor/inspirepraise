@@ -1189,7 +1189,7 @@ def invite_to_ministry(request, ministry_code):
                 send_ministry_invitation(user, password, sender, ministry)
                 sent.append(email)
             if sent:
-                msg_for_sent = 'Invitations have been sent to the following addresses: ' + ' ,'.join(sent)
+                msg_for_sent = 'Invitations have been sent to the following addresses: ' + ', '.join(sent)
                 messages.success(request, msg_for_sent)
             if already_invited:
                 msg_for_already_invited = 'These people have already been invited: ' + ' ,'.join(already_invited)
