@@ -401,19 +401,19 @@ def link_song_to_verses(song, verse_list):
     song_pop = song.popularity
     #update popularity on queryset
     song_as_qs.update(popularity= song_pop +1)
-    print verse_list
+    # print verse_list
     for verse_id in verse_list:
         verse = Verse.objects.get(pk=verse_id)
-        print verse_id
+        # print verse_id
         if SongVerses.objects.filter(song=song, verse=verse).exists():
             songverse = SongVerses.objects.get(song=song, verse=verse)
             popularity = songverse.SV_popularity
-            print song
-            print "initial %s" % popularity
+            # print song
+            # print "initial %s" % popularity
             popularity = popularity + 1
             songverse.SV_popularity = popularity
             songverse.save()
-            print "final %s" % songverse.SV_popularity
+            # print "final %s" % songverse.SV_popularity
         else:
             songverse = SongVerses(song=song, verse=verse, SV_popularity=1)
             songverse.save()

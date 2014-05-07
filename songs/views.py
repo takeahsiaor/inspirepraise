@@ -789,7 +789,10 @@ def import_versesongs_from_csv(request):
     other cols: song cclis separated by commas
     Takes the verse grouping makes sure it's parsable into verse objects then tags the songs with the verses
     """
-    f = open("C:/dropbox/django/verse_groupings_to_songs_test.csv", 'r')
+    try:
+        f = open("C:/dropbox/django/verse_groupings_to_songs_NOT_IMPORTED.csv", 'r')
+    except:
+        f = open("D:/dropbox/django/verse_groupings_to_songs_NOT_IMPORTED.csv", 'r')        
     rows = [] #list of lists of the form [verse grouping string, ccli, ccli]
     for line in f:
         line = line.strip()
@@ -820,9 +823,7 @@ def import_versesongs_from_csv(request):
                 verse_id_list = parse_string_to_verses(verse_string)
                 #running into problems that are related to python getting ahead of mysql i think
                 # popularities are getting all screwed up
-                # t1 = FuncThread(link_song_to_verses, song, verse_id_list)
-                # t1.start()
-                # t1.join()
+                #only happens at work
                 link_song_to_verses(song, verse_id_list)
         else:
             bad_count = bad_count + 1
