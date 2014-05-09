@@ -29,8 +29,12 @@ td{
 .sortable-placeholder {
     height: 50px;
     border: 2px dashed #add38d !important;
-    background-color: #f6fbf4 !important;
+    background-color: #4a5866 !important;
 }
+.modal-header, .modal-footer{
+    background-color:#485563;
+}
+
 </style>
 <script type="text/javascript">  
     var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');

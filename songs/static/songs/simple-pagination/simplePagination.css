@@ -105,15 +105,23 @@ ul.simple-pagination {
 	min-width: 14px;
 	padding: 0 7px;
 	margin: 0 5px 0 0;
-	border-radius: 3px;
+	border-radius: 0px;
 	box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-	background: #efefef; /* Old browsers */
-	background: -moz-linear-gradient(top, #ffffff 0%, #efefef 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#efefef)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top, #ffffff 0%,#efefef 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top, #ffffff 0%,#efefef 100%); /* Opera11.10+ */
-	background: -ms-linear-gradient(top, #ffffff 0%,#efefef 100%); /* IE10+ */
-	background: linear-gradient(top, #ffffff 0%,#efefef 100%); /* W3C */
+/* 	background: #efefef;
+	background: -moz-linear-gradient(top, #ffffff 0%, #efefef 100%); 
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#efefef));
+	background: -webkit-linear-gradient(top, #ffffff 0%,#efefef 100%); 
+	background: -o-linear-gradient(top, #ffffff 0%,#efefef 100%); 
+	background: -ms-linear-gradient(top, #ffffff 0%,#efefef 100%); 
+	background: linear-gradient(top, #ffffff 0%,#efefef 100%); */
+    
+    background: #4e5d6c; /* Old browsers */
+	background: -moz-linear-gradient(top, #4e5d6c 0%, #434f5b 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#4e5d6c), color-stop(100%,#434f5b)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #4e5d6c 0%,#434f5b 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top, #4e5d6c 0%,#434f5b 100%); /* Opera11.10+ */
+	background: -ms-linear-gradient(top, #4e5d6c 0%,#434f5b 100%); /* IE10+ */
+	background: linear-gradient(top, #4e5d6c 0%,#434f5b 100%); /* W3C */
 }
 
 .light-theme a:hover {
@@ -125,7 +133,7 @@ ul.simple-pagination {
 	background: #666;
 	color: #FFF;
 	border-color: #444;
-	box-shadow: 0 1px 0 rgba(255,255,255,1), 0 0 2px rgba(0, 0, 0, 0.3) inset;
+	/* box-shadow: 0 1px 0 rgba(255,255,255,1), 0 0 2px rgba(0, 0, 0, 0.3) inset; */
 	cursor: default;
 }
 

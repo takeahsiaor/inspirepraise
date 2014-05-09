@@ -14,7 +14,7 @@
     
     <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
     <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
+    <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.css' %}">
     <script src="{%static 'songs/song_stats_context.js' %}"></script>
     <script type="text/javascript">  
         var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
@@ -73,7 +73,15 @@
             cursor:pointer;
         }
         tr.song:hover{
-            background-color:#E7F3FD;
+            background-color:#4e5d6c;
+        }
+        .light-theme>.disabled >.ellipse {
+            background:transparent;
+            color:#fff;
+        }
+        .light-theme>.disabled >.ellipse:hover{
+            background:transparent;
+            color:#fff;
         }
     </style>
 {% endblock %}
@@ -129,7 +137,7 @@ View song usage info from:
             <input type="text" autocomplete="off" class="form-control" id="id_query" name="query" placeholder="Enter Title, Authors, or Lyrics" value="{{query}}">
         </div>
         <div class="col-md-1">
-            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">Search</button>
+            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#fff">Search</button>
         </div>
 
     </div>
@@ -227,11 +235,11 @@ View song usage info from:
             <br>
             <div class="row">
                 <div class="col-md-2">
-                <input type="button" class="form-control add-button" name="{{song.object.ccli}}" 
+                <input type="button" class="btn btn-default form-control add-button" name="{{song.object.ccli}}" 
                     id="{{song.object.ccli}}-add" value="Add to Set List"/>
                 </div>
                 <div class="col-md-2">
-                <input type="button" class="form-control remove-button" name="{{song.object.ccli}}" 
+                <input type="button" class="btn btn-default form-control remove-button" name="{{song.object.ccli}}" 
                     id="{{song.object.ccli}}-remove" value="Remove from Set List" disabled="true"/>
                 </div>
             </div>

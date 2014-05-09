@@ -228,7 +228,8 @@
 				}
 				$link = $('<span class="current">' + (options.text) + '</span>');
 			} else {
-				$link = $('<a href="' + o.hrefTextPrefix + (pageIndex + 1) + o.hrefTextSuffix + '" class="page-link ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">' + (options.text) + '</a>');
+				// $link = $('<a href="' + o.hrefTextPrefix + (pageIndex + 1) + o.hrefTextSuffix + '" class="page-link ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">' + (options.text) + '</a>');
+				$link = $('<a href="' + o.hrefTextPrefix + (pageIndex + 1) + o.hrefTextSuffix + '" class="page-link ladda-button" data-style="zoom-in" data-spinner-color="#fff">' + (options.text) + '</a>');
 				$link.click(function(event){
 					return methods._selectPage.call(self, pageIndex, event);
 				});
