@@ -423,7 +423,7 @@ def transpose(original, semitones, original_key, final_key):
     """
     takes as input the original chord, the number of semitones to adjust
     and the original key as parsed from the chordpro file
-    for now, automated key detection is a bit too much for me.
+    and the final desired key
     - parse original chord into the note sections
     - find the index
     - then offset all notes by semitones
@@ -432,7 +432,6 @@ def transpose(original, semitones, original_key, final_key):
         -for instance, Ab vs G#
     """
     slash_chord = False
-    # if 'min' in original_key:
     if 'm' in original_key:
         major = False
         root = original_key[:-1]

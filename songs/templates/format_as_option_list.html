@@ -72,7 +72,8 @@
         <tr class="song" id="{{song.object.ccli}}">
         <td class="clickable">{{song.object.title}}</td> 
         <td class="clickable">{{song.object.authors.all|join:', '}}</td> 
-        <td><input type="button" name="{{song.object.ccli}}" value="Tag" class='form-control tag-button'></td> 
+        <td><input type="button" name="{{song.object.ccli}}" value="Tag" 
+            class='btn btn-default form-control tag-button'></td> 
         </tr>
         {% endfor %}
         </table>
