@@ -35,16 +35,16 @@ $(document).ready(function () {
                     $(this).find('.tag-button').attr('disabled', true);
                 }
             });
-            //activate button function
-            // $('.clickable').click(function(){
-                // var $ccli = $(this).parent().attr('id');
-                // $.get('/worship/song-info-pop/'+$ccli, function(response){
-                    // $('#modal-body').empty();
-                    // $(response).appendTo('#modal-body');
-                    // $('#myModal').modal('toggle');
-                // });
-            // });
-            
+            //activate modal functionality
+            $('.clickable').click(function(){
+                var $ccli = $(this).parent().attr('id');
+                $.get('/song-info-pop/'+$ccli, function(response){
+                    $('#song-details-content').empty();
+                    $(response).appendTo('#song-details-content');
+                    $('#song-details-modal').modal('toggle');
+                });
+            });
+            //activate button functionality
             $('.tag-button').click(function(){
                 var $versestring ='';
                 $('.verse').each(function(){
@@ -168,9 +168,6 @@ $(document).ready(function () {
         }, 650);
 
     });
-    
-
-    
 });
 
 

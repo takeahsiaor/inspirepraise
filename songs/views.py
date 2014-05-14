@@ -990,8 +990,9 @@ def crawl_wordtoworship_letter(request): #CURRENTLY DISABLED WILL THROW ERROR
 #add instruction. how many added, how many already in database
 
 def lookup(request):
-    #looking up "in your freedom" gives 'cia do louvor \n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\tdeigma marques \n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\tmarty sampson \n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\traymond badham'
+    #looking up "in your freedom" gives 'cia do louvor \n\t\t\t\t\
     # for author. need to parse it differently
+    start = time.clock()
     errors = []
     #handle popup - if popup is present in url params and 1, then use popup template
     if '_popup' in request.GET:
@@ -1054,7 +1055,8 @@ def lookup(request):
                     num_old = num_old + 1
                 songs.append(song)
             return render(request, template, {'songs':songs, 'url':url, 'num_new':num_new, 'num_old':num_old, 'popup':popup, 'query':query})
-    
+    elapsed = time.clock() - start
+    print elapsed
     return render(request, template, {'errors':errors, 'popup':popup})
 
 
@@ -1533,7 +1535,12 @@ def song_usage_details_profile(request):
             'details_contexts':details_contexts, 
             'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})        
        
-    
+
+@login_required
+def song_usage_history(request):
+    user = request.user
+    profile = Profile.objects.get(user=user)
+    pass
     
 @login_required
 def edit_profile(request):
@@ -1672,7 +1679,8 @@ def tag_verse_song_search(request):
         songs = songs[:10]
         if sug == query:
             sug = None
-        return render(request, 'format_as_option_list.html', {'newsongs':songs, 'sug':sug, 'query':query, 'tag_search':True})
+        return render(request, 'format_as_option_list.html', 
+            {'newsongs':songs, 'sug':sug, 'query':query, 'tag_search':True})
     return HttpResponseRedirect(reverse('songs.views.success'))
     
 

@@ -15,27 +15,7 @@
 <script src="{%static 'songs/song_stats_context.js' %}"></script>
 <script src="{% static 'songs/bootstrap/js/typeahead.js' %}"></script>  
 <link href="{% static 'songs/bootstrap/css/typeahead.js-bootstrap.css'%}" rel="stylesheet" type="text/css">
-<style>
-.sortable {
-    list-style-type: none;
-}
-.list-group-item {
-  cursor: url(https://mail.google.com/mail/images/2/openhand.cur), default !important;
-}
-/* to keep lyrics from running into each other */
-td{
-    padding-right:3px;
-}
-.sortable-placeholder {
-    height: 50px;
-    border: 2px dashed #add38d !important;
-    background-color: #4a5866 !important;
-}
-.modal-header, .modal-footer{
-    background-color:#485563;
-}
 
-</style>
 <script type="text/javascript">  
     var setlist = jQuery.parseJSON('{{request.session.setlist|jsonify }}');
     var archived = jQuery.parseJSON('{{request.session.archived|jsonify }}');

@@ -45,23 +45,6 @@
         {% if sug %}
         <div>Did you mean <a href='#' id="suggestion">{{sug}}</a>?</div>
         {% endif %}
-        <script type="text/javascript">  
-            Shadowbox.init({
-                handleOversize: 'resize',
-            });
-            $(".clickable").click(function(){
-                var ccli = $(this).parent().attr('id');
-                var link = '/song-info-pop/'+ccli;
-                Shadowbox.open({
-                    content:    link,
-                    player:     "iframe",
-                    title:      "Song at a glance...",
-                    //height:     350,
-                    width:      600,
-
-                });
-            });
-        </script> 
         
     <p>Search Results for "{{query}}":</p>
     <table class="table table-hover" id="songlisting">
@@ -70,8 +53,8 @@
         </thead>
     {% for song in newsongs %}
         <tr class="song" id="{{song.object.ccli}}">
-        <td class="clickable">{{song.object.title}}</td> 
-        <td class="clickable">{{song.object.authors.all|join:', '}}</td> 
+        <td class="clickable" name="{{song.object.ccli}}">{{song.object.title}}</td> 
+        <td class="clickable" name="{{song.object.ccli}}">{{song.object.authors.all|join:', '}}</td> 
         <td><input type="button" name="{{song.object.ccli}}" value="Tag" 
             class='btn btn-default form-control tag-button'></td> 
         </tr>

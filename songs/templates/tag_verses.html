@@ -1,18 +1,10 @@
-
 {% extends "base.html" %}
-
 
 {% load staticfiles %}
 {% block headloaders %} 
 
 <script type="text/javascript" src="{% static 'songs/tag_verses.js' %}"></script>
 <link href="{% static 'songs/spinner.css'%}" rel="stylesheet" type="text/css">
-<script type="text/javascript" src="{% static 'songs/shadowbox/shadowbox.js' %}">
-    Shadowbox.init({
-        handleOversize: "drag",
-        modal: true
-</script>
-<link href="{% static 'songs/shadowbox/shadowbox.css'%}" rel="stylesheet" type="text/css">
 <script src="{% static 'songs/pnotify/jquery.pnotify.min.js' %}"></script>
 <link href="{% static 'songs/pnotify/jquery.pnotify.default.css' %}" media="all" rel="stylesheet" type="text/css" />
 <link href="{% static 'songs/pnotify/jquery.pnotify.default.icons.css' %}" media="all" rel="stylesheet" type="text/css" />
@@ -38,24 +30,14 @@
                     'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
                     'Jude', 'Revelation']
         });
-        
     });
 </script>  
-    <style>
-        tr.song {
-            cursor:pointer;
-        }
-
-    </style>
-
-
 {% endblock %}
 
 {% block title %} | {{title}}{% endblock %}
 
 {% block content %}
 <h1>{{header1}}</h1>
-
 
 Can't find your song? <a href="#" onclick="window.open('../lookup/?_popup=1', '_blank', 'height=500,width=800');">Import from CCLI</a>.
 <br><br>
@@ -110,7 +92,14 @@ Can't find your song? <a href="#" onclick="window.open('../lookup/?_popup=1', '_
 
 </div>
 
+<!-- song details modal -->
+<div class="modal fade" id="song-details-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="song-details-content">
 
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 
 {% endblock %}

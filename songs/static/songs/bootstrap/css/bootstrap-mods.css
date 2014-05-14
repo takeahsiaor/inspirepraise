@@ -1,0 +1,43 @@
+html {
+    overflow-y:scroll;
+}
+/* to keep lyrics from running into each other */
+td{
+    padding-right:3px;
+}
+
+/* adds effects to song table elements */
+tr.song {
+    cursor:pointer;
+}
+tr.song:hover{
+    background-color:#4e5d6c;
+}
+
+/* pagination element styling */
+.light-theme>.disabled >.ellipse {
+    background:transparent;
+    color:#fff;
+}
+.light-theme>.disabled >.ellipse:hover{
+    background:transparent;
+    color:#fff;
+}
+
+/* setlist sorting effects */
+.sortable {
+    list-style-type: none;
+}
+.list-group-item {
+  cursor: url(https://mail.google.com/mail/images/2/openhand.cur), default !important;
+}
+.sortable-placeholder {
+    height: 56px;
+    border: 2px dashed #add38d !important;
+    background-color: #4a5866 !important;
+}
+
+/* customized modal header and footer */
+.modal-header, .modal-footer{
+    background-color:#485563;
+}

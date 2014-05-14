@@ -4,14 +4,10 @@
     <title>InspirePraise {% block title %}{% endblock %}</title>
     {% load staticfiles %}
     <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
+    <link href="{% static 'songs/bootstrap/css/bootstrap-mods.css'%}" rel="stylesheet" type="text/css">
     <!-- <link href="{% static 'songs/bootstrap/css/spacelab-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
     <!-- <link href="{% static 'songs/bootstrap/css/yeti-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
     <!-- <link href="{% static 'songs/bootstrap/css/darkly-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <link href="{% static 'songs/bootstrap/css/slate-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <link href="{% static 'songs/bootstrap/css/superhero-bootstrap-orig.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <link href="{% static 'songs/bootstrap/css/superhero-refine-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <link href="{% static 'songs/bootstrap/css/superhero-refine-bootstrap2.css'%}" rel="stylesheet" type="text/css"> -->
-    <!-- <link href="{% static 'songs/bootstrap/css/superhero-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
     <!-- <link href="{% static 'songs/bootstrap/css/flatly-bootstrap.css'%}" rel="stylesheet" type="text/css"> -->
     <!-- <link href="{% static 'songs/bootstrap/css/sticky-footer.css'%}" rel="stylesheet" type="text/css"> -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
@@ -19,20 +15,9 @@
     <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
     <script src="{% static 'songs/setlist_push.js' %}"></script>   
     <link href="{% static 'songs/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
-    <style>
-    html {
-        overflow-y:scroll;
-    }
-    /* to keep lyrics from running into each other */
-    td{
-        padding-right:3px;
-    }
-    </style>
     <script>
         $('.alert').alert();
     </script>
-    
-    
     {% block headloaders %}{% endblock %}
     
 </head>
@@ -82,7 +67,6 @@
                 <ul class="dropdown-menu">
                     <li><a href="{% url 'songs.views.profile' %}">Your Profile</a></li>
                     <li><a href="#">Your song usage history</a></li>
-                    <li><a href="#">Your favorite songs</a></li>
                     <li><a href="{% url 'songs.views.deactivate_account_view' %}">Deactivate account</a></li>
                     <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
                 </ul>
@@ -138,24 +122,7 @@
         </ul>
     </div>
 {% endif %}
-<!-- {% if not user.is_authenticated %}
 
-        <div class="jumbotron">
-            <h1>
-            Simpler,<br>
-            Scripture-based,<br>
-            Song Selection
-            </h1>
-            <p>
-                Search through our database for songs <br>based on relevant verses. <br>
-                Signing up is easy!
-                
-                </a>
-            </p>
-            <p><a class="btn btn-primary btn-lg" role="button" href="{% url 'registration_register'%}">Sign up!</a></p>
-            
-        </div>
-{% endif %} -->
 
 {% block content %}
 {% endblock %}

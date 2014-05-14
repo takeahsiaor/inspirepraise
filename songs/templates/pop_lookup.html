@@ -1,35 +1,35 @@
-
 <head>
     {% load staticfiles %}
     <title>InspirePraise {% block title %}{% endblock %}</title>
     <link href="{% static 'songs/bootstrap/css/bootstrap.css'%}" rel="stylesheet" type="text/css">
+    <link href="{% static 'songs/bootstrap/css/bootstrap-mods.css'%}" rel="stylesheet" type="text/css">
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="{% static 'songs/bootstrap/js/bootstrap.js' %}"></script>
     <link rel="icon" type="image/png" href="{% static 'songs/leaf1.png' %}">
-    <script src="{% static 'songs/loading-buttons/dist/spin.min.js' %}"></script> 
-    <script src="{% static 'songs/loading-buttons/dist/ladda.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'songs/loading-buttons/dist/ladda-themeless.min.css' %}">
-    <style>
-    html {
-        overflow-y:scroll;
-    }
-    </style>
-    <script type="text/javascript">  
+    <script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
+    <script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.css' %}">
+    
+    <script>
         $(document).ready(function(){
+            Ladda.bind('button[type=submit]');
+                
             $("#songlisting tr:not(.song)").hide();
             $("#songlisting tr:first-child").show();
             
             $("#songlisting tr.song").click(function(){
-                $(this).next("tr").toggle();
-                $(this).find(".arrow").toggleClass("up");
+                if ($(this).next("tr").is(":visible")){
+                    $(".details").hide();
+                }
+                else{
+                    $(".details").hide();
+                    $(this).next("tr").show();
+                }
             });
-            
-            Ladda.bind('button[type=submit]');
 
         });
-    </script>  
     
-    <script>
+    
         //this loads in the query from the tag songs & verses page
         window.onload = loadFromParent;
         function loadFromParent() {
@@ -46,7 +46,8 @@
 </head>
 <body>
 <div class="container">
-   
+   <div class="row">
+    <div class="col-sm-12">
 
     <h1>Search and Add Song through CCLI</h1>
     <p>
@@ -54,13 +55,15 @@
     </p>
 
 {% if errors %}
-    <ul>
     {% for error in errors %}
-        <li style="color: red;">{{error}}</li>
+        <div class="alert alert-danger">{{ error|escape }}</div>
     {% endfor %}
-    </ul>
 {% endif %}
+    </div>
+   </div>
 
+<div class="row">
+<div class="col-sm-12">
 <form class="form-horizontal" role="form">
     <div class="row">
         {% csrf_token %}
@@ -79,30 +82,33 @@
         </div>
         <div class="col-sm-3">
             <input type="hidden" name="_popup" value="{{popup}}">
-            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" data-spinner-color="#5f8ee6">Search</button>
+            <button type="submit" class="btn btn-default ladda-button" data-style="zoom-in" 
+                data-spinner-color="#fff">Search</button>
         </div>
-
     </div>
-</form>
 
-<br>
+</form>
+</div>
+</div>
+
 
 
 {% if songs %}
 
 <div class="row">
+    <div class="col-sm-12">
     <p>The following {{songs|length }} song{{ songs|pluralize }} have been added to the song database! <br>
     If your song is in this list, you can <a href="javascript: self.close()">close</a> this window. <br>
     If this list doesn't have your song, search again using different terms or search method.
-    
     </p>
+    </div>
 </div>
 
 <div class="row">
-
+    <div class="col-sm-12">
     <table id="songlisting" class='table'>
     <thead>
-    <tr><th>Song Title</th><th>Authors</th></tr>
+    <tr><th>Title</th><th>Authors</th></tr>
     </thead>
         {% for song in songs %}
         <tr class="song">
@@ -123,22 +129,23 @@
         </td>
         {% endfor %}
     </table>
-
+    </div>
 </div>
-    <script>
-        //this is for refreshing the home page after new results are populated
-        setTimeout(function(){
-            //if the page loaded with with a query - meaning not opened for first time
-            //then refresh the parent page.
-            var pathname = window.location.href;
-            if (pathname.indexOf('query') >= 0){
-                var query = $('#id_query').val();
-                $('#song_query', opener.document).val(query);
-                $('#search_songs', opener.document).trigger('click');
-            }
-            
-        },1000);
-    </script>
+
+<script>
+    //this is for refreshing the home page after new results are populated
+    setTimeout(function(){
+        //if the page loaded with with a query - meaning not opened for first time
+        //then refresh the parent page.
+        var pathname = window.location.href;
+        if (pathname.indexOf('query') >= 0){
+            var query = $('#id_query').val();
+            $('#song_query', opener.document).val(query);
+            $('#search_songs', opener.document).trigger('click');
+        }
+    },1000);
+    
+</script>
 {% else %}
 <!--     <p>No songs matched your search criteria.</p> -->
 {% endif %}
