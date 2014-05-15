@@ -1,6 +1,6 @@
 
 $(document).ready(function () {
-    var stack_topright = {"dir1": "down", "dir2": "left", "firstpos1":45, "firstpos2":15};
+    var stack_topright = {"dir1": "down", "dir2": "left", "firstpos1":0, "firstpos2":0};
         // MUST MUST MUST CLEAN DATA!!
         //must i? does this really matter in this case? everything is get parameters
         //no interaction with database beyond querying for it
@@ -67,6 +67,7 @@ $(document).ready(function () {
                             styling: "bootstrap",
                             addclass: "alert-danger",
                             stack: stack_topright,
+                            nonblock:{nonblock:true,nonblock_opacity:0.2}
                             
                         });
                    
@@ -83,7 +84,7 @@ $(document).ready(function () {
                             delay: 3000,
                             styling: "bootstrap",
                             stack: stack_topright,
-                            
+                            nonblock:{nonblock:true,nonblock_opacity:0.2}                            
                         });
                     //this changes the class of the tr in which the button resides
                     $(this).parent().parent().attr('class', 'song success');
@@ -117,7 +118,7 @@ $(document).ready(function () {
                 styling: "bootstrap",
                 addclass: "alert-danger",
                 stack: stack_topright,
-                
+                nonblock:{nonblock:true,nonblock_opacity:0.2}                
             });
         }
         else {
@@ -148,7 +149,7 @@ $(document).ready(function () {
                         styling: "bootstrap",
                         addclass: "alert-danger",
                         stack: stack_topright,
-                        
+                         nonblock:{nonblock:true,nonblock_opacity:0.2}                       
                     });
                 }
                 

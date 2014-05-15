@@ -66,7 +66,7 @@
                 Welcome, {{user.email}} <b class="caret"></b></a>
                 <ul class="dropdown-menu">
                     <li><a href="{% url 'songs.views.profile' %}">Your Profile</a></li>
-                    <li><a href="#">Your song usage history</a></li>
+                    <li><a href="{% url 'songs.views.song_usage_history' %}">Your song usage history</a></li>
                     <li><a href="{% url 'songs.views.deactivate_account_view' %}">Deactivate account</a></li>
                     <li><a href="{% url 'songs.views.logout_view' %}">Logout</a></li>
                 </ul>

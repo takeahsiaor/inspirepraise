@@ -29,6 +29,7 @@ from difflib import get_close_matches
 from songs.functions import parse_string_to_verses, test_parsable, force_int, check_song, transpose
 from songs.functions import get_song_info_from_link, save_songs_from_dict, link_song_to_verses
 from songs.functions import make_key_option_html, convert_setlist_to_string, get_md5_hexdigest, get_global_key_stats
+from songs.functions import convert_cclikey_to_titlekey
 from bs4 import BeautifulSoup
 import urllib2, string, re, pickle, os, json
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -1455,6 +1456,7 @@ def song_usage_details_profile(request):
     Used in search results for both logged in and non logged in users at hte moment
     Also handles if there logged in but no profilesong belonging to user's exists.
     """
+    #this needs optimization. seem to repeat self a lot here. needs refactoring
     ccli = request.GET.get('ccli')
     song = Song.objects.get(ccli=int(ccli))
     
@@ -1488,6 +1490,8 @@ def song_usage_details_profile(request):
         #gets song context for each of the profilesongdetails in terms of song titles
         details = details[:5]
         song_contexts = [] #list of elements of form 'songtitle (key), songtitle (key)' 
+        ministries_used = []
+       
         for detail in details:
             raw_song_contexts = []
             context_string = detail.song_context
@@ -1501,13 +1505,33 @@ def song_usage_details_profile(request):
                 raw_song_contexts.append(partial_str)
             full_str = ', '.join(raw_song_contexts)
             song_contexts.append(full_str)
+            if detail.ministry_id:
+                ministries_used.append(Ministry.objects.get(id=detail.ministry_id))
+            else:
+                ministries_used.append(None)
             
         global_key_percentage_list = get_global_key_stats(song)
-        #zip of Latest 5 ProfileSongDetails and strings of song title and key
-        details_contexts = zip(details, song_contexts)        
-        return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
-            'details_contexts':details_contexts, 'percentages':key_percentage_list, 
-            'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})
+        #zip of Latest 5 ProfileSongDetails and strings of song title and key and ministry used
+        details_contexts_mins = zip(details, song_contexts, ministries_used)
+        
+        #this is only if coming from song history page where someone is looking at a specific profilesong detail
+        if 'detail_id' in request.GET:
+            detail_id = request.GET['detail_id']
+            details = ProfileSongDetails.objects.get(id=detail_id)
+            if details.ministry_id:
+                ministry = Ministry.objects.get(id=details.ministry_id)
+            else:
+                ministry = None
+            song_context_string = convert_cclikey_to_titlekey(details.song_context)
+            details = (details, song_context_string)
+            return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
+                'details_contexts_mins':details_contexts_mins, 'percentages':key_percentage_list, 
+                'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True,
+                'instance_detail_context':details, 'ministry':ministry})            
+        else:
+            return render(request, 'format_as_html.html', {'song':song, 'profilesong':profilesong, 
+                'details_contexts_mins':details_contexts_mins, 'percentages':key_percentage_list, 
+                'global_percentages':global_key_percentage_list, 'song_stats_details_profile':True})
 
     else:
         #ugh so much repeated code
@@ -1540,7 +1564,29 @@ def song_usage_details_profile(request):
 def song_usage_history(request):
     user = request.user
     profile = Profile.objects.get(user=user)
-    pass
+    all_profilesongdetails = \
+        ProfileSongDetails.objects.select_related().filter(profilesong__profile=profile).order_by('-date')
+        
+    paginator = Paginator(all_profilesongdetails, 15)
+    page = request.GET.get('page')
+    
+    try:
+        all_profilesongdetails = paginator.page(page)
+    except PageNotAnInteger:
+        all_profilesongdetails = paginator.page(1)
+    except EmptyPage:
+        all_profilesongdetails = paginator.page(paginator.num_pages)
+    
+    #get the songs and keys each song was used with in a readable format
+    # song_context_strings = []
+    # for profilesongdetails in all_profilesongdetails:
+        # context_string = convert_cclikey_to_titlekey(profilesongdetails.song_context)
+        # song_context_strings.append(context_string)
+
+    # details_and_contexts = zip(all_profilesongdetails, song_context_strings)
+    
+    return render(request, 'song_usage_history.html', {'profilesongdetails':all_profilesongdetails, 
+        'profile':profile})
     
 @login_required
 def edit_profile(request):
@@ -2267,7 +2313,14 @@ def push_setlist(request):
             # print profilesong.profile, profilesong.song, profilesong.times_used
             profilesongdetails = ProfileSongDetails(profilesong=profilesong, key=setlistsong.key, 
                 song_context=current_setlist.song_order)
-            profilesongdetails.save()
+                
+            #if publishing to a ministry, will save profilesongdetails with ministry id
+            if ministry_id != 'none' and ministry_id != None:
+                profilesongdetails.ministry_id = int(ministry_id)
+                profilesongdetails.save()
+            else:
+                profilesongdetails.save()
+                
             # print profilesongdetails.key, profilesongdetails.from_setlist
             
     if ministry_id == "none" or ministry_id == None: #Not sending to any ministries
@@ -2678,17 +2731,8 @@ def display_archived_setlist(request):
     title_values = []
     
     for setlist in archived_setlists:
-        ccli_key_list = setlist.song_order.split(',')
-        setlist_song_list = []
-        setlist_string = ''
-        for ccli_key_string in ccli_key_list:
-            ccli_key = ccli_key_string.split('-')
-            ccli = ccli_key[0]
-            key = ccli_key[1]
-            song = Song.objects.get(ccli=int(ccli))
-            title = song.title
-            setlist_string += title+' ('+key+'), '
-        title_values.append(setlist_string[:-2])
+        setlist_string = convert_cclikey_to_titlekey(setlist.song_order)
+        title_values.append(setlist_string)
         
         
     archived_and_titles = zip(archived_setlists, title_values)

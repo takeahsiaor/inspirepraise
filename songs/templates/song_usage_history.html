@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block headloaders %} 
+<script src="{% static 'songs/simple-pagination/jquery.simplePagination.js' %}"></script>
+<link href="{% static 'songs/simple-pagination/simplePagination.css'%}" rel="stylesheet" type="text/css">
+<script src="{% static 'songs/song_history.js' %}"></script>
+<script src="{% static 'songs/loading-buttons/spin.min.js' %}"></script> 
+<script src="{% static 'songs/loading-buttons/ladda.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'songs/loading-buttons/ladda-themeless.min.css' %}">
+<script type="text/javascript">  
+    $(document).ready(function(){
+        $(function() {
+            $("#pagination").pagination({
+                pages: {{ profilesongdetails.paginator.num_pages }},
+                prevText: "&laquo;",
+                nextText: "&raquo;",
+                hrefTextPrefix: '?page=',
+                currentPage: {{ profilesongdetails.number }},
+                selectOnClick: false,
+            });
+            
+            if ({{profilesongdetails.number}} == 1){
+                $('.prev').parent().attr('class','disabled');
+            }
+            if ({{profilesongdetails.number}} == {{profilesongdetails.paginator.num_pages}}){
+                $('.next').parent().attr('class','disabled');
+            }
+            Ladda.bind('.page-link');
+        }); 
+    });
+</script>   
+{% endblock %}
+
+{% block content %}
+<h1>Your Song Usage History</h1>
+
+{% if messages %}
+{% for message in messages %}
+    {% if message.level < 26 %}
+    <div class="alert alert-success">
+        {{ message }} 
+    </div>
+    {% endif %}
+    {% if message.level > 26 %}
+    <div class="alert alert-warning">
+        {{ message }} 
+    </div>
+    {% endif %}
+{% endfor %}
+{% endif %}
+
+
+
+{% if profilesongdetails %}
+<div class="row">
+    <div class="col-md-7">
+        <ul class="pagination" id="pagination">
+        
+        </ul>
+    </div>
+    <div class="col-md-3 col-md-offset-2">
+        <p class="text-right">
+        Showing Songs {{profilesongdetails.start_index}} - {{profilesongdetails.end_index}} of {{profilesongdetails.paginator.count}} <br>
+        </p>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class = "col-md-12">
+        <ul class="list-group">
+            {% for detail in profilesongdetails %}
+            <li class="list-group-item">
+            <div class="row">
+            <div class="col-md-2">
+                {{detail.date}}
+            </div>
+            <div class="col-md-3">
+                {{detail.profilesong.song|truncatechars:40}} 
+            </div>
+            <div class="col-md-4">
+                {{detail.profilesong.song.authors.all|join:', '|truncatechars:120}}
+            </div>
+            <div class="col-md-1">
+                Key of {{detail.key}}
+            </div>
+            <div class="col-md-1 pull-right">
+                <button class="btn btn-primary song-history-modal-button" id="{{detail.id}}" 
+                    name="{{detail.profilesong.song.ccli}}">Details</button>
+            </div>
+            </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>    
+</div>
+{% else %}
+    You haven't published any songs from a setlist yet!
+{% endif %}
+
+
+<!-- modal for song details -->
+<div class="modal fade" id="song-history-details" tabindex="-1" role="dialog" 
+ aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" id="song-history-modal-content">
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% endblock %}

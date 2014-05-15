@@ -6,13 +6,14 @@ $(document).ready(function () {
     $('#download-all').click(function(){
         $.pnotify({
             title: 'Downloading!',
-            text: 'That thing that you were trying to do worked! Single file dude!',
+            text: "You've successfully downloaded all setlist chords into a single PDF!",
             type: 'success',
             delay: 3000,
             styling: "bootstrap",
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         var transpose_values_str = '';
         //get all the transpose values in order
@@ -34,6 +35,7 @@ $(document).ready(function () {
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         var ccli = $(this).attr('name');
         window.location.replace("/lyrics/?single_song=yes&ccli="+ccli);
@@ -49,6 +51,7 @@ $(document).ready(function () {
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         var ccli = $(this).attr('name');
         window.location.replace("/lyrics/?single_song=no");
@@ -59,13 +62,14 @@ $(document).ready(function () {
     $('.download-single').click(function(){
         $.pnotify({
             title: 'Downloading!',
-            text: 'That thing that you were trying to do worked!',
+            text: "You've successfully downloaded the chords for that song!",
             type: 'success',
             delay: 3000,
             styling: "bootstrap",
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         //get ccli
         var ccli = $(this).attr('name');
@@ -121,6 +125,7 @@ $(document).ready(function () {
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         $.get('/push-setlist/', {'ministry_id':ministry_id, 'save_stats':save_stats}, function(response){
         
@@ -193,6 +198,7 @@ $(document).ready(function () {
             closer_hover: true,
             addclass: "stack-topright",
             stack: stack_topright,
+            nonblock:{nonblock:true,nonblock_opacity:0.2}
         });
         $.get('/update-setlist/',{'archive':true}, function(response){
             setlist_length = 0;

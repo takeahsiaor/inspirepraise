@@ -6,6 +6,24 @@ from bs4 import BeautifulSoup
 import hashlib
 # def chord_lines_to_html(lines):
 
+def convert_cclikey_to_titlekey(input_string):
+    """
+    Takes as input a string of the form 'ccli-key,ccli-key,ccli-key' common to 
+    setlist order in setlist objects and song context in ministry/profilesongdetails
+    and converts it to 'songtitle(key), songtitle(key)' and returns it
+    """
+    ccli_key_list = input_string.split(',')
+    song_string = ''
+    for ccli_key_string in ccli_key_list:
+        ccli_key = ccli_key_string.split('-')
+        ccli = ccli_key[0]
+        key = ccli_key[1]
+        song = Song.objects.get(ccli=int(ccli))
+        title = song.title
+        song_string += title+' ('+key+'), '
+    return song_string[:-2]
+        
+
 def get_global_key_stats(song):
     """
     Accepts a song object and returns percentages of use for each key.

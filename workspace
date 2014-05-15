@@ -18,6 +18,7 @@
             <File name="songs\static\songs\style.css" />
             <File name="songs\static\songs\admin\css\widgets.css" />
             <File name="songs\static\songs\simple-pagination\simplePagination.css" />
+            <File name="songs\static\songs\bootstrap\css\bootstrap-mods.css" />
         </Folder>
         <Folder name="JS">
             <File name="songs\static\songs\archive_set_list.js" />

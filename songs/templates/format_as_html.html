@@ -7,36 +7,62 @@
       <div class="modal-body" id="song-stats-modal-body">
         <div class="row">
             <div class="col-md-12">
-            {% if details_contexts %}
-            <ul class="list-group">
-                <li class="list-group-item list-group-item-info">
-                {% if profilesong %}
-                <strong>Dates and songs <em>{{song.title}}</em> was last used with by you:</strong>
-                {% else %}
-                <strong>Dates and songs <em>{{song.title}}</em> was last used with by others:</strong>                
+            {% if instance_detail_context %}
+                <h4>Details on this usage:</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <div class="row">
+                        <div class="col-md-4">
+                            {{instance_detail_context.0.date}}<br>
+                            {% if ministry %}
+                            <em><small>For {{ministry.name}}</small></em>
+                            {%endif%}
+                        </div>
+                        <div class="col-md-8">
+                            {{instance_detail_context.1}}
+                        </div>
+                                                
+                        </div>
+                    </li>
+                </ul>
+            {% endif %}
+            {% if details_contexts_mins %}
+                {% if not instance_detail_context or details_contexts_mins|length > 1 %}
+                <div class="row">
+                    <div class="col-md-12">
+                        {% if profilesong %}
+                        <h4>Details on your most recent past usages:</h4>
+                        {% else %}
+                        <h4>Details on the most recent past usages by others:</h4>                
+                        {% endif %}
+                    <ul class="list-group">
+                    {% for detail, context, ministry in details_contexts_mins %}
+                        <li class="list-group-item">
+                            <div class="row">
+                            <div class="col-md-4">
+                            {{detail.date|date}}<br>
+                            {% if ministry %}
+                            <em><small>For {{ministry.name}}</small></em>
+                            {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                             {{context}}
+                            </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    </div>
+                </div>
                 {% endif %}
-                </li>
-            {% for detail, context in details_contexts %}
-                <li class="list-group-item">
-                    <div class="row">
-                    <div class="col-md-3">
-                    {{detail.date|date}}
-                    </div>
-                    <div class="col-md-9">
-                     {{context}}
-                    </div>
-                    </div>
-                </li>
-            {% endfor %}
-            </ul>
-            
             {% else %}
             <p class="alert alert-info">Nobody has used this song yet so there is no usage information. Be the first!</p>
             {% endif %}
             </div>
         </div>
         {% if percentages %}
-        <span class="help-block">Keys you've used for <em>{{song.title}}</em></span>
+        <h4>Stats on the keys used:</h4>
+        <span class="help-block">Keys you've used:</em></span>
         {% for key, percentage in percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -52,8 +78,7 @@
         {% endfor %}
         {% endif %}
         {% if global_percentages %}
-        <br>
-        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys others have used:</span>
         {% for gkey, gpercentage in global_percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -70,22 +95,26 @@
         {% endif %}
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-success" data-dismiss="modal">Done</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
       </div>
 {% endif %}
 {% if song_stats_details_ministry %}
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="song-stats-label">{{song.title}} - {{ministrysong.ministry.name}}</h4>
+        <h4 class="modal-title" id="song-stats-label">
+            {{song.title}} {%if ministrysong %}- {{ministrysong.ministry.name}}{%endif%}</h4>
       </div>
       <div class="modal-body" id="song-stats-modal-body">
 
         <div class="row">
             <div class="col-md-12">
+                {% if ministrysong %}
+                <h4>Details on {{ministrysong.ministry.name}}'s most recent past usages:</h4>
+                {% else %}
+                <h4>Details on the most recent past usages by others:</h4>                
+                {% endif %}
+
             <ul class="list-group">
-                <li class="list-group-item list-group-item-info">
-                <strong>Dates and songs <em>{{song.title}}</em> was last used with by this ministry:</strong>
-                </li>
             {% for detail, context in details_contexts %}
                 <li class="list-group-item">
                     <div class="row">
@@ -102,7 +131,8 @@
             </div>
         </div>
         {% if percentages %}
-        <span class="help-block">Keys this ministry used for <em>{{song.title}}</em></span>
+        <h4>Stats on the keys used:</h4>
+        <span class="help-block">Keys this ministry used:</span>
         {% for key, percentage in percentages %}
         <div class="row">
             <div class="col-md-1">
@@ -118,8 +148,7 @@
         {% endfor %}
         {% endif %}
         {% if global_percentages %}
-        <br>
-        <span class="help-block">Keys others have used for <em>{{song.title}}</em></span>
+        <span class="help-block">Keys others have used:</span>
         {% for gkey, gpercentage in global_percentages %}
         <div class="row">
             <div class="col-md-1">

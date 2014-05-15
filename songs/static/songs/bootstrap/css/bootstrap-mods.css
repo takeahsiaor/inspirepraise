@@ -28,7 +28,7 @@ tr.song:hover{
 .sortable {
     list-style-type: none;
 }
-.list-group-item {
+.list-group-item[draggable="true"] {
   cursor: url(https://mail.google.com/mail/images/2/openhand.cur), default !important;
 }
 .sortable-placeholder {

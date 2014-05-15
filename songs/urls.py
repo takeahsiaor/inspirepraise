@@ -75,7 +75,7 @@ urlpatterns = patterns('',
     url(r'^song-usage-details-profile/$', views.song_usage_details_profile),
     url(r'^song-usage-details-ministry/$', views.song_usage_details_ministry),
     url(r'^change-song-stats-context/$', views.change_song_stats_context),
-    
+    url(r'^song-usage-history/$', views.song_usage_history),
     # url(r'^suggest/$', views.suggestion),
     
     # one time utilities
