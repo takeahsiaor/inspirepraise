@@ -1335,7 +1335,7 @@ def leave_ministry(request, ministry_code):
     #get number of members in ministry
     ministry = Ministry.objects.get(id=ministry_code)
     number_of_members = MinistryMembership.objects.filter(ministry=ministry).count()
-    num_admins = Ministrymembership.objects.filter(ministry=ministry, admin=True).count()
+    num_admins = MinistryMembership.objects.filter(ministry=ministry, admin=True).count()
     print number_of_members
     user = request.user
     profile = Profile.objects.get(user=user)

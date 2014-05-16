@@ -33,6 +33,7 @@
             <File name="songs\static\songs\set_list.js" />
             <File name="songs\static\songs\setlist_push.js" />
             <File name="songs\static\songs\tag_verses.js" />
+            <File name="songs\static\songs\song_history.js" />
         </Folder>
         <Folder name="Shadowbox">
             <File name="songs\static\songs\shadowbox\shadowbox.css" />
