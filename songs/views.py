@@ -1506,7 +1506,10 @@ def song_usage_details_profile(request):
             full_str = ', '.join(raw_song_contexts)
             song_contexts.append(full_str)
             if detail.ministry_id:
-                ministries_used.append(Ministry.objects.get(id=detail.ministry_id))
+                try: #make sure ministry exists
+                    ministries_used.append(Ministry.objects.get(id=detail.ministry_id))
+                except:
+                    ministries_used.append(None)
             else:
                 ministries_used.append(None)
             
@@ -1519,7 +1522,10 @@ def song_usage_details_profile(request):
             detail_id = request.GET['detail_id']
             details = ProfileSongDetails.objects.get(id=detail_id)
             if details.ministry_id:
-                ministry = Ministry.objects.get(id=details.ministry_id)
+                try: #make sure ministry exists
+                    ministry = Ministry.objects.get(id=details.ministry_id)
+                except:
+                    ministry = None
             else:
                 ministry = None
             song_context_string = convert_cclikey_to_titlekey(details.song_context)
