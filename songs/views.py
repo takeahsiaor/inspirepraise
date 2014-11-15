@@ -2719,7 +2719,7 @@ def display_archived_setlist(request):
     """
     user = request.user
     profile = Profile.objects.get(user=user)
-    archived_setlists = Setlist.objects.filter(profile=profile, archived=True).order_by('date')
+    archived_setlists = Setlist.objects.filter(profile=profile, archived=True).order_by('-date')
     
     paginator = Paginator(archived_setlists, 10)
     page = request.GET.get('page')

@@ -12,8 +12,12 @@ def convert_cclikey_to_titlekey(input_string):
     setlist order in setlist objects and song context in ministry/profilesongdetails
     and converts it to 'songtitle(key), songtitle(key)' and returns it
     """
+    #temporary fix: not sure what was wrong with archived setlist
+    if not input_string:
+        return
     ccli_key_list = input_string.split(',')
     song_string = ''
+
     for ccli_key_string in ccli_key_list:
         ccli_key = ccli_key_string.split('-')
         ccli = ccli_key[0]
