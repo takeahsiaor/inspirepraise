@@ -4,11 +4,6 @@ from rest_framework.serializers import (ModelSerializer,
 
 from songs.models import Song, Verse
 
-class UserSerializer(HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ('url', 'username', 'email', 'is_staff')
-
 class SongSerializer(ModelSerializer):
     class Meta:
         model = Song

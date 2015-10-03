@@ -9,7 +9,7 @@ from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm,
 from songs.forms import MinistryEditForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
 from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
-from songs.serializers import UserSerializer, SongSerializer, VerseSerializer
+from songs.serializers import SongSerializer, VerseSerializer
 
 from registration.models import RegistrationProfile
 from django.core.mail import send_mail
@@ -48,11 +48,6 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus.flowables import KeepTogether, Spacer, PageBreak
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 
 class SongViewSet(viewsets.ModelViewSet):

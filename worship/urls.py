@@ -14,7 +14,6 @@ from worship.views import hello, current_datetime, hours_ahead, display_meta
 
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
 router.register(r'songs', views.SongViewSet, base_name='song')
 router.register(r'verses', views.VerseViewSet, base_name='verse')
 
