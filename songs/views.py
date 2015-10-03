@@ -616,7 +616,14 @@ def retrieve_setlist(request, **kwargs):
     user = request.user
     #attempt to fix the logging in of created superuser and having no profile
     profile, profile_created = Profile.objects.get_or_create(user=user)
-    current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False, pushed=False)
+    current_setlist = Setlist.objects.filter(
+        profile=profile, archived=False, pushed=False).order_by('-pk')
+    if current_setlist:
+        current_setlist = current_setlist[0]
+    else:
+        current_setlist = Setlist.objects.create(
+            profile=profile, archived=False, pushed=False)
+        setlist_created = True
     request.session['current_setlist'] = current_setlist
     #currently will force stats context to be profile. Later can add database column to remember context
     request.session['song_stats_context'] = profile
