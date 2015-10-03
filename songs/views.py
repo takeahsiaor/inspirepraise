@@ -58,7 +58,7 @@ class SongViewSet(viewsets.ModelViewSet):
         verses = self.request.query_params.get('verses', None)
         if verses:
             verse_ids = verses.split(',')
-            queryset = Song.objects.filter(verses__in=verse_ids)
+            queryset = Song.objects.filter(verses__in=verse_ids).distinct()
         else:
             #is it ok to give none when no query param is specified?
             #don't really want to give ALL songs. too many
