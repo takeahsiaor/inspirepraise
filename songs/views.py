@@ -616,10 +616,13 @@ def retrieve_setlist(request, **kwargs):
     user = request.user
     #attempt to fix the logging in of created superuser and having no profile
     profile, profile_created = Profile.objects.get_or_create(user=user)
-    current_setlist = Setlist.objects.filter(
+    current_setlists = Setlist.objects.filter(
         profile=profile, archived=False, pushed=False).order_by('-pk')
-    if current_setlist:
-        current_setlist = current_setlist[0]
+    if current_setlists:
+        current_setlist = current_setlists[0]
+        setlist_created = False
+        #get rid of other active setlists created by a different login instance
+        current_setlists.exclude(id=current_setlist.id).delete()
     else:
         current_setlist = Setlist.objects.create(
             profile=profile, archived=False, pushed=False)
