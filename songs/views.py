@@ -9,6 +9,8 @@ from songs.forms import MinistryForm, ProfileForm, TagVerseForm, SearchInfoForm,
 from songs.forms import MinistryEditForm
 from songs.models import Song, Book, Chapter, Verse, SongVerses, Ministry, Profile, Publisher, Author, MinistryMembership
 from songs.models import Invitation, Setlist, SetlistSong, MinistrySong, ProfileSong, MinistrySongDetails, ProfileSongDetails
+from songs.serializers import UserSerializer, SongSerializer, VerseSerializer
+
 from registration.models import RegistrationProfile
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
@@ -20,6 +22,9 @@ from django.contrib.auth import login, authenticate, logout #these are functions
 from django.contrib.auth import views #these are views
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.contrib.auth.signals import user_logged_in, user_login_failed
+from django.contrib.auth.models import User
+from rest_framework import viewsets, generics, filters
+
 from itertools import chain, groupby
 from operator import itemgetter
 from registration.signals import user_activated
@@ -43,6 +48,45 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus.flowables import KeepTogether, Spacer, PageBreak
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class SongViewSet(viewsets.ModelViewSet):
+    serializer_class = SongSerializer
+
+    def get_queryset(self):
+        #verses expect comma delimited verse ids
+        verses = self.request.query_params.get('verses', None)
+        if verses:
+            verse_ids = verses.split(',')
+            queryset = Song.objects.filter(verses__in=verse_ids)
+        else:
+            #is it ok to give none when no query param is specified?
+            #don't really want to give ALL songs. too many
+            queryset = Song.objects.none()
+        return queryset
+
+class VerseViewSet(viewsets.ModelViewSet):
+    serializer_class = VerseSerializer
+
+    def get_queryset(self):
+        verse_string = self.request.query_params.get('verse_string', None)
+        book = self.request.query_params.get('book', None)
+        chapter = self.request.query_params.get('chapter', None)
+        if verse_string:
+            verse_id_list = parse_string_to_verses(verse_string)
+            return Verse.objects.filter(id__in=verse_id_list)
+        elif book:
+            queryset = Verse.objects.filter(book__name__iexact=book)
+            if chapter:
+                queryset = queryset.filter(chapter=chapter)
+            return queryset
+        else:
+            return Verse.objects.none()
 
 #globals for reportlab
 #------------------------------------------------------
@@ -381,7 +425,6 @@ def chord_pdf(request):
         transpose_list_final_key = []
         for s in transpose_list_str:
             transpose_list_final_key.append(s)
-        print transpose_list_final_key[0]
     else:
         ccli_list = request.session['setlist']
         if len(ccli_list) == 0:
@@ -561,7 +604,6 @@ def display_push_setlist(request, **kwargs):
     """
     after login, look for setlists that are pushed.
     """
-    print 'display_push_setlist'
     user = request.user
     profile, profile_created = Profile.objects.get_or_create(user=user)
     pushed_setlist = Setlist.objects.filter(profile=profile, pushed=True)
@@ -580,17 +622,14 @@ def retrieve_setlist(request, **kwargs):
     #attempt to fix the logging in of created superuser and having no profile
     profile, profile_created = Profile.objects.get_or_create(user=user)
     current_setlist, setlist_created = Setlist.objects.get_or_create(profile=profile, archived=False, pushed=False)
-    print setlist_created
     request.session['current_setlist'] = current_setlist
     #currently will force stats context to be profile. Later can add database column to remember context
     request.session['song_stats_context'] = profile
     if setlist_created: #new setlist object therefore no setlist order
         setlist_text =''
-        print 'NEW SETLIST'
         request.session['setlist'] = []
         return
     else: #old setlist object so must parse song order and put into session 'setlist'
-        print current_setlist
         setlist_text = current_setlist.song_order
         if setlist_text: #if the setlist currently has songs
             ccli_list = setlist_text.split(',')
@@ -690,7 +729,6 @@ def deactivate_account_confirm(request):
         num_members = MinistryMembership.objects.filter(ministry=ministry).count()
         num_admins = MinistryMembership.objects.filter(ministry=ministry, admin=True).count()
         if num_admins == 1 and num_members > 1: #this means that currnet user is the only admin
-            print "will transfer admin rights for %s" % ministry.name
             #give rights to oldest member
             #must be at least the two earliest members since i'm not deleting the membership of current admin
             #so if 1st member is admin, then second will be the one to transfer
@@ -701,7 +739,6 @@ def deactivate_account_confirm(request):
                 else:
                     earliest_member.admin = True
                     earliest_member.save()
-                    print "admin for %s transferred to %s" % (earliest_member.ministry.name, earliest_member.member.user.email)
         
     message = "You've just deactivated your account! Sorry to see you go but remember, you can always come back\
         by simply logging back in. Hope to see you again soon!"
@@ -757,22 +794,22 @@ def import_songverse_from_file(request):
     f = open('C:/dropbox/django/dict_to_import.txt', 'r')
     song_verse_dict = pickle.load(f)
     f.close()
-    print 'Number of songs'
-    print len(song_verse_dict)
+    # print 'Number of songs'
+    # print len(song_verse_dict)
     keep_track = 0
     for ccli in song_verse_dict:
         does_not_exist = check_song(ccli)
         if does_not_exist:
-            print 'fail'
-            print ccli
+            # print 'fail'
+            # print ccli
             continue
         song = Song.objects.get(ccli=int(ccli))
         for verses in song_verse_dict[ccli]:
             verse_ids = parse_string_to_verses(verses)
             link_song_to_verses(song, verse_ids)
         keep_track = keep_track + 1
-    print "number of successful imports"
-    print keep_track
+    # print "number of successful imports"
+    # print keep_track
     return HttpResponseRedirect(reverse('songs.views.success'))
     
 class FuncThread(threading.Thread):
@@ -828,9 +865,6 @@ def import_versesongs_from_csv(request):
                 link_song_to_verses(song, verse_id_list)
         else:
             bad_count = bad_count + 1
-            print "unparsable %s" % verse_string
-    print good_count
-    print bad_count
     return HttpResponseRedirect(reverse('songs.views.success'))            
     
     
@@ -904,9 +938,6 @@ def worshiptogether(request):
     # pickle.dump(not_parsable, i)
     # i.close()
     
-    print 'Number with no ccli', len(no_ccli)
-    print 'No scripture', no_scripture
-    print 'Not parsable', not_parsable
     return HttpResponseRedirect(reverse('songs.views.success'))
         
 
@@ -973,7 +1004,6 @@ def crawl_wordtoworship_letter(request): #CURRENTLY DISABLED WILL THROW ERROR
     #first makes sure it is in the database with check_song. if ccli number is wrong
     #does_not_exist will be true then should skip entry
     for ccli in song_info:
-        print ccli
         does_not_exist = check_song(ccli)
         if does_not_exist:
             continue
@@ -997,10 +1027,8 @@ def lookup(request):
     errors = []
     #handle popup - if popup is present in url params and 1, then use popup template
     if '_popup' in request.GET:
-        print 'POPUP!'
         popup = request.GET.get('_popup')
     else:
-        print "NO POPUP!"
         popup = '0'
     if popup =='1':
         template = 'pop_lookup.html'
@@ -1057,7 +1085,6 @@ def lookup(request):
                 songs.append(song)
             return render(request, template, {'songs':songs, 'url':url, 'num_new':num_new, 'num_old':num_old, 'popup':popup, 'query':query})
     elapsed = time.clock() - start
-    print elapsed
     return render(request, template, {'errors':errors, 'popup':popup})
 
 
@@ -1228,7 +1255,6 @@ def ministry_admin_rights(request):
     memberships = MinistryMembership.objects.filter(id__in=membership_ids)
         
     if 'give' in request.GET:
-        print 'give admin rights!'
         memberships.update(admin=True)
         admin_emails = []
         for membership in memberships:
@@ -1238,7 +1264,6 @@ def ministry_admin_rights(request):
         return HttpResponseRedirect(reverse('songs.views.success'))
     
     if 'revoke' in request.GET:
-        print 'revoke admin rights!'
         memberships.update(admin=False)
         revoked_admin_emails = []
         for membership in memberships:
@@ -1286,10 +1311,6 @@ def edit_ministry(request, ministry_code):
             ministry.city = request.POST.get('city')
             ministry.state_province = request.POST.get('state_province')
             ministry.country = request.POST.get('country')
-            # print ministry.address
-            # print ministry.city
-            # print ministry.state_province
-            # print ministry.country
             ministry.save()
             msg = "Ministry update successful!"
             messages.success(request, msg)
@@ -1318,8 +1339,6 @@ def delete_ministry(request, ministry_code):
     except:
         return HttpResponseRedirect(reverse('songs.views.forbidden'))
     ministry.delete()
-    # print "i'm deleting the following ministry"
-    # print ministry
     msg = "%s ministry successfully deleted!" % ministry.name
     messages.success(request, msg)
     return HttpResponseRedirect(reverse('songs.views.profile'))
@@ -1336,7 +1355,6 @@ def leave_ministry(request, ministry_code):
     ministry = Ministry.objects.get(id=ministry_code)
     number_of_members = MinistryMembership.objects.filter(ministry=ministry).count()
     num_admins = MinistryMembership.objects.filter(ministry=ministry, admin=True).count()
-    print number_of_members
     user = request.user
     profile = Profile.objects.get(user=user)
     membership = MinistryMembership.objects.get(member=profile, ministry=ministry)
@@ -1344,11 +1362,9 @@ def leave_ministry(request, ministry_code):
     membership.delete()
     messages.success(request, "You've successfully left the "+ministry.name+" ministry!")
     if number_of_members == 1: #you're the last one, 
-        print 'deleted ministry here!'
         ministry.delete()
         messages.success(request, "Since you were the last member, the ministry was deleted. Cleanin' house baby!")
     elif admin and num_admins > 1: #if more than 1 member and you are admin, transfer rights
-        print 'transfer admin rights'
         earliest_member = MinistryMembership.objects.filter(ministry=ministry).order_by('join_date')[0]
         earliest_member.admin = True
         earliest_member.save()
@@ -1419,7 +1435,6 @@ def song_usage_details_ministry(request):
         
         #zip of Latest 5 ProfileSongDetails and strings of song title and key
         details_contexts = zip(details, song_contexts)
-        print elapsed
         return render(request, 'format_as_html.html', {'song':song, 'ministrysong':ministrysong, 
             'details_contexts':details_contexts, 'percentages':key_percentage_list, 
             'global_percentages':global_key_percentage_list, 'song_stats_details_ministry':True})
@@ -2082,7 +2097,6 @@ def search_songs_with_chords(request):
     page = request.GET.get('page')
     try:
         songs = paginator.page(page)
-        print 'here'
     except PageNotAnInteger:
         songs = paginator.page(1)
     except EmptyPage:
@@ -2156,11 +2170,10 @@ def load_ccli_list(request):
     """
     reads csv file from dropbox containing cclis and puts them in the database
     """
-    f = open('C:/dropbox/django/cclis_to_add.csv', 'r')
+    f = open('D:/dropbox/django/cclis_to_add.csv', 'r')
     contents = f.read()
     f.close()
     ccli_list = contents.split(',')
-    print "%s total cclis" % len(ccli_list)
     count = 0
     for ccli in ccli_list:
         does_not_exist = check_song(ccli)
@@ -2168,7 +2181,6 @@ def load_ccli_list(request):
             print "%s does not exist" % ccli
         else:
             count += 1
-    print "%d songs input" % count
     return HttpResponseRedirect(reverse('songs.views.success'))
     
 def create_chord_template(request):
@@ -2181,7 +2193,7 @@ def create_chord_template(request):
             continue
         ccli = song.ccli
         title = song.title
-        f = open('C:/dropbox/django/songs_chordpro/'+str(ccli)+'.cho', 'w')
+        f = open('D:/dropbox/django/songs_chordpro/'+str(ccli)+'.cho', 'w')
         title_line = '{title:'+title+'}\n'
         authors_list = []
         for author in song.authors.all():
@@ -2232,7 +2244,6 @@ def push_setlist_decision(request):
     current_setlist = request.session['current_setlist']
     
     if 'accept' in request.GET:
-        print 'accept'
         setlist_id = request.GET.get('accept')
         #archive current setlist if there are songs in the setlist
         if current_setlist.song_order:
@@ -2258,7 +2269,6 @@ def push_setlist_decision(request):
         num_of_songs = str(len(temp_list))
 
     elif 'reject' in request.GET:
-        print 'reject'
         setlist_id = request.GET.get('reject')
         rejected_setlist = Setlist.objects.get(id=setlist_id)
         rejected_setlist_songs = SetlistSong.objects.filter(setlist=rejected_setlist)
@@ -2330,7 +2340,6 @@ def push_setlist(request):
             # print profilesongdetails.key, profilesongdetails.from_setlist
             
     if ministry_id == "none" or ministry_id == None: #Not sending to any ministries
-        print 'i did not send anything'
         return HttpResponseRedirect(reverse('songs.views.success'))
     
     #only continues here if there is some ministry to send to 
@@ -2346,7 +2355,6 @@ def push_setlist(request):
             # print ministrysongdetails.key, ministrysongdetails.from_setlist
             ministrysongdetails.save()
             
-    print 'i sent something'
     memberships = MinistryMembership.objects.filter(ministry=ministry)
     for membership in memberships:
         profile = membership.member
@@ -2363,7 +2371,6 @@ def push_setlist(request):
                 key=setlist_song.key, capo_key=setlist_song.capo_key, order=setlist_song.order)
             new_setlist_song.save()
     elapsed = time.clock() - start
-    print elapsed
     return HttpResponseRedirect(reverse('songs.views.success'))
     
 def setlist(request):
@@ -2481,7 +2488,6 @@ def update_setlist(request):
         # setlist_as_list = request.session['setlist']
     
     if ccli == 'clear':
-        print 'clear'
         if request.user.is_authenticated():
             setlist_as_list = request.session['setlist']
             # order_string = convert_setlist_to_string(setlist_as_list)
@@ -2500,8 +2506,6 @@ def update_setlist(request):
     elif 'add' in request.GET:
         #not logged in: update 'setlist' session variable
         #logged in: update 'setlist' session variable, create setlistsong, update setlist song_order
-        
-        print 'add'
         #common section
         song = Song.objects.get(ccli=int(ccli))
         key = request.GET.get('key')
@@ -2524,7 +2528,6 @@ def update_setlist(request):
         #not logged in: update 'setlist' session variable
         #logged in: update 'setlist' session, find SetlistSong instance to delete, update setlist song_order
         
-        print 'remove'
         #common section
         #gets the index of the list that has tuple with first element being ccli, returns as list
         index_as_list = [index for index, tuple in enumerate(temp_list) if tuple[0]==ccli] 
@@ -2545,7 +2548,6 @@ def update_setlist(request):
         #not logged in: update setlist session
         #logged in: update setlist session, update song_order in current setlist
         
-        print 'reorder'
         #common section
         csv_ccli = ccli[:-1] #sent ccli csv must be in form ccli-key,ccli-key
         ccli_list = csv_ccli.split(',')
@@ -2564,11 +2566,9 @@ def update_setlist(request):
             current_setlist.save()
       
     elif 'setlist-notes' in request.GET:
-        print 'setlist-notes'
         #will only be available for logged in users
         cancel = request.GET.get('cancel')
         if cancel == 'true':
-            print 'canceled'
             notes = current_setlist.notes
         else:
             notes = request.GET.get('setlist-notes')
@@ -2578,13 +2578,11 @@ def update_setlist(request):
         return HttpResponse(notes)
     
     elif 'song-notes' in request.GET:
-        print 'song-notes'
         cancel = request.GET.get('cancel')
         song = Song.objects.get(ccli=int(ccli))
         setlist_song = SetlistSong.objects.filter(song=song, setlist=current_setlist)
         if cancel == 'true':
             notes = setlist_song[0].notes
-            print 'canceled'
         else:
             notes = request.GET.get('song-notes')
             #don't want trailing new lines or spaces. also don't want notes with just spaces
@@ -2626,12 +2624,10 @@ def update_setlist(request):
         #only available if logged in
         setlist_id = request.GET.get('delete')
         setlist_to_delete = Setlist.objects.get(pk=int(setlist_id))
-        print 'DELETED'
         setlist_to_delete.delete() #will this delete all related fields? setlistsongs? YES!
     
     elif 'reuse-setlist' in request.GET:
         #only available if logged in
-        print 'reused'
         setlist_id = request.GET.get('reuse-setlist')
         if current_setlist.song_order: #if there are songs in setlist, archive it
             current_setlist.archived = True
@@ -2664,12 +2660,10 @@ def update_setlist(request):
             keychange_ccli = request.GET.get('reset')
             song = Song.objects.get(ccli=keychange_ccli)
             new_key = get_chordpro_key(song)
-            print 'reset'
         elif 'ccli-keychange' in request.GET:
             ccli_key = request.GET.get('ccli-keychange') # string of form ccli-key
             ccli_key = ccli_key.split('-')
             keychange_ccli = ccli_key[0]
-            print 'keychange'
             new_key = ccli_key[1]
             song = Song.objects.get(ccli=keychange_ccli)
 
@@ -2774,7 +2768,6 @@ def push_chords_to_database(request):
         song_as_qs.update(chords=chords_from_cho)
         f.close()
         count += 1
-    print count
     return HttpResponseRedirect(reverse('songs.views.success'))
 
     

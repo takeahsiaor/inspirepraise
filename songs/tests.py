@@ -448,36 +448,38 @@ class UpdateSetlistAuth(TestCase):
         song_order_should_be = str(song1.ccli)+'-G,'+str(song2.ccli)+'-C,'+str(song3.ccli)+'-B'
         self.assertEqual(setlist_song_order, song_order_should_be)  
         
-# class StringToVerseParseTests(TestCase):
-    # """
-    # tests for parsing string to verse
+class StringToVerseParseTests(TestCase):
+    """
+    tests for parsing string to verse
 
-    # """
-    # def setUp(self):
-        # verses = [22, 23, 18, 22]
-        # book = Book.objects.create(name='Ruth', num_chapters = len(verses), order_index = 8)
-        # for chap in range(1, 5):
-            # chapter = Chapter.objects.create(book=book, number=chap, num_verses=verses[chap-1])
-            # for ver in range(1, verses[chap-1]+1):
-                # verse = Verse.objects.create(book=book, chapter=chapter, number=ver)
+    """
+    def setUp(self):
+        verses = [22, 23, 18, 22]
+        book = Book.objects.create(name='Ruth', num_chapters = len(verses), order_index = 8)
+        for chap in range(1, 5):
+            chapter = Chapter.objects.create(book=book, number=chap, num_verses=verses[chap-1])
+            for ver in range(1, verses[chap-1]+1):
+                verse = Verse.objects.create(book=book, chapter=chapter, number=ver)
                 
-    # def test_parse_book_only(self):
-        # """
-        # Given a string of a book name, should return all verse ids in the book
-        # """
-        # query = 'ruth'
-        # qs = Verse.objects.filter(book__name__iexact=query)
-        # verse_id_list = qs.values_list('id', flat=True)
-        # self.assertEqual(len(parse_string_to_verses(query)), len(verse_id_list))
+    def test_parse_book_only(self):
+        """
+        Given a string of a book name, should return all verse ids in the book
+        """
+        query = 'ruth'
+        qs = Verse.objects.filter(book__name__iexact=query)
+        verse_id_list = qs.values_list('id', flat=True)
+        self.assertEqual(len(parse_string_to_verses(query)), len(verse_id_list))
         
-    # def test_parse_book_chapters(self):
-        # """
-        # Given a string of a book name and chapters
-        # """
-        # query = 'ruth 1-2'
-        # qs = Verse.objects.filter(book__name__iexact='ruth', chapter__number=1)
-        # qs2 = Verse.objects.filter(book__name__iexact='ruth', chapter__number=2)
-        # qs = qs | qs2
-        # verse_ids = qs.values_list('id', flat=True)
-        # self.assertEqual(len(parse_string_to_verses(query)), len(verse_ids))
+    def test_parse_book_chapters(self):
+        """
+        Given a string of a book name and chapters
+        """
+        query = 'ruth 1-2'
+        qs = Verse.objects.filter(book__name__iexact='ruth', chapter__number=1)
+        qs2 = Verse.objects.filter(book__name__iexact='ruth', chapter__number=2)
+        qs = qs | qs2
+        verse_ids = qs.values_list('id', flat=True)
+        self.assertEqual(len(parse_string_to_verses(query)), len(verse_ids))
+        query = 'ruth 1,2'
+        self.assertEqual(len(parse_string_to_verses(query)), len(verse_ids))
         

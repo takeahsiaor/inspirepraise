@@ -105,6 +105,27 @@ def parse_string_to_verses(query):
     or (book chapter:verse-verse).
     returns a list of verse ids
     """
+    query = query.strip().lower()
+    #makes sure query is not empty string (no scripture reference)
+    if query == '':
+        return []
+    # break up the string into groupings
+    query_groups = query.split(',')
+    results = []
+    previous_book = None
+    for query_group in query_groups:
+        previous_book, verse_list = parse_string_group_to_verses(
+                                        query_group.strip(), previous_book)
+        results += verse_list
+    return set(results)
+
+
+def parse_string_group_to_verses(query, previous_book=None):
+    """
+    receives as input, a string query in the form (book chapter:verses)
+    or (book chapter:verse-verse).
+    returns a list of verse ids
+    """
     book_list = ['genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy', 
         'joshua', 'judges', 'ruth', '1 samuel', '2 samuel', '1 kings', '2 kings', 
         '1 chronicles', '2 chronicles', 'ezra', 'nehemiah', 'esther', 'job', 
@@ -117,16 +138,11 @@ def parse_string_to_verses(query):
         'titus', 'philemon', 'hebrews', 'james', '1 peter', '2 peter', '1 john', 
         '2 john', '3 john', 'jude', 'revelation']
         
-    query = query.strip().lower()
-    #makes sure query is not empty string (no scripture reference)
-    if query == '':
-        return []
-    #currently doesn't allow commas
-    if ',' in query:
-        print query
-        return []
+
+    query_parts = query.split(' ')
+    # query_parts will help to distinguish between 2 john and 2:2 for example
     #check if book name has ordinal, find location of first number
-    if query[0] in '123':
+    if query[0] in '123' and len(query_parts) > 1:
         match = re.search("\d", query[2:])
         loc_ord = 2
     else:
@@ -142,13 +158,24 @@ def parse_string_to_verses(query):
         chapver = []
     else:
         num_loc = match.start() + loc_ord
-        book = get_close_matches(query[0:num_loc].strip(), book_list, 1, 0.6)[0]
+        try:
+            book = get_close_matches(query[0:num_loc].strip(), book_list, 1, 0.6)[0]
+        except:
+            book = None
         chapver = query[num_loc:].split(':')
+
+    # if there is no book in query, (2:2-5) then use previous book
+    if not book:
+        if not previous_book:
+            # could not parse book and no book passed in
+            return None, []
+        book = previous_book
+
     #if there is nothing after the book name, get the whole book
     if not chapver:
         qs = Verse.objects.filter(book__name__iexact=book)
         verse_list = qs.values_list('id', flat=True)
-        return list(verse_list)
+        return book, list(verse_list)
     else:
         chapter = chapver[0].strip()
     verse_list = []
@@ -229,7 +256,8 @@ def parse_string_to_verses(query):
             verse_object = Verse.objects.get(book__name__iexact=book, chapter__number=chapter, number=verses)
             verse_list.append(verse_object.id)
     verse_list = list(verse_list)
-    return verse_list
+    return book, verse_list
+    # return book
     
 def test_parsable(query):
     """
@@ -307,7 +335,6 @@ def get_song_info_from_link(url):
             continue
         #this gets rid of all commas in between authors
         author = author.replace(',','')
-        # print author.strip().lower()
         authors.append(author.strip().lower())
     raw_publisher = soup.select('.copyright li')
     #populate publisher list: publishers will be a list of strings
@@ -423,19 +450,14 @@ def link_song_to_verses(song, verse_list):
     song_pop = song.popularity
     #update popularity on queryset
     song_as_qs.update(popularity= song_pop +1)
-    # print verse_list
     for verse_id in verse_list:
         verse = Verse.objects.get(pk=verse_id)
-        # print verse_id
         if SongVerses.objects.filter(song=song, verse=verse).exists():
             songverse = SongVerses.objects.get(song=song, verse=verse)
             popularity = songverse.SV_popularity
-            # print song
-            # print "initial %s" % popularity
             popularity = popularity + 1
             songverse.SV_popularity = popularity
             songverse.save()
-            # print "final %s" % songverse.SV_popularity
         else:
             songverse = SongVerses(song=song, verse=verse, SV_popularity=1)
             songverse.save()
