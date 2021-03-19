@@ -45,7 +45,7 @@ djangocms-style==1.5
 djangocms-teaser==0.1
 djangocms-text-ckeditor==2.4.2
 djangocms-video==0.1
-djangorestframework==3.2.4
+djangorestframework==3.11.2
 easy-thumbnails==2.2
 elasticsearch==0.4.4
 enum34==1.0
