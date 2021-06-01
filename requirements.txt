@@ -74,7 +74,7 @@ simplejson==3.3.1
 six==1.8.0
 sqlparse==0.1.14
 stevedore==1.1.0
-urllib3==1.7.1
+urllib3==1.26.5
 virtualenv==1.11.6
 virtualenv-clone==0.2.5
 virtualenvwrapper==4.3.1
