@@ -52,7 +52,7 @@ enum34==1.0
 geopy==1.6.1
 html5lib==0.999
 ipdb==0.8
-ipython==2.3.1
+ipython==7.16.3
 mock==1.0.1
 model-mommy==1.2
 mutagen==1.27
